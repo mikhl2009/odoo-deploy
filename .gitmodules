@@ -1,0 +1,31 @@
+[submodule "custom_addons/wms"]
+	path = custom_addons/wms
+	url = https://github.com/OCA/wms.git
+	branch = 18.0
+[submodule "custom_addons/stock-logistics-warehouse"]
+	path = custom_addons/stock-logistics-warehouse
+	url = https://github.com/OCA/stock-logistics-warehouse.git
+	branch = 18.0
+[submodule "custom_addons/product-attribute"]
+	path = custom_addons/product-attribute
+	url = https://github.com/OCA/product-attribute.git
+	branch = 18.0
+[submodule "custom_addons/rma"]
+	path = custom_addons/rma
+	url = https://github.com/OCA/rma.git
+	branch = 18.0
+[submodule "custom_addons/server-tools"]
+	path = custom_addons/server-tools
+	url = https://github.com/OCA/server-tools.git
+	branch = 18.0
+[submodule "custom_addons/web"]
+	path = custom_addons/web
+	url = https://github.com/OCA/web.git
+	branch = 18.0
+[submodule "custom_addons/account-financial-reporting"]
+	path = custom_addons/account-financial-reporting
+	url = https://github.com/OCA/account-financial-reporting.git
+	branch = 18.0
+[submodule "custom_addons/odoo-woocommerce-sync"]
+	path = custom_addons/odoo-woocommerce-sync
+	url = https://github.com/roboes/odoo-woocommerce-sync.git
