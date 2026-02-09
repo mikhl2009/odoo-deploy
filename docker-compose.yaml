@@ -18,6 +18,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    command: ["odoo"]
     depends_on:
       db:
         condition: service_healthy
@@ -31,6 +32,12 @@ services:
     volumes:
       - odoo-web-fresh:/var/lib/odoo
       - odoo-addons-fresh:/mnt/extra-addons
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.create_connection(('127.0.0.1', 8069), 3); s.close()\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     restart: unless-stopped
 
 volumes:

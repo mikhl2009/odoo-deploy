@@ -82,4 +82,17 @@ else
     echo "Database '${DB_NAME}' already initialized."
 fi
 
-exec /entrypoint.sh "$@"
+FINAL_ARGS=()
+for arg in "$@"; do
+    if [ "${arg}" = "--stop-after-init" ] && [ "${ODOO_ALLOW_STOP_AFTER_INIT:-0}" != "1" ]; then
+        echo "Ignoring runtime '--stop-after-init' to prevent restart loops."
+        continue
+    fi
+    FINAL_ARGS+=("${arg}")
+done
+
+if [ ${#FINAL_ARGS[@]} -eq 0 ]; then
+    FINAL_ARGS=("odoo")
+fi
+
+exec /entrypoint.sh "${FINAL_ARGS[@]}"
