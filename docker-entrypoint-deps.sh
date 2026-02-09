@@ -1,20 +1,26 @@
 #!/bin/bash
 set -e
 
-echo "Checking WooCommerce Python dependencies..."
-
-# Install missing Python packages only when needed.
-python3 -c "import filetype" 2>/dev/null || NEED_INSTALL=1
-python3 -c "import phonenumbers" 2>/dev/null || NEED_INSTALL=1
-python3 -c "import woocommerce" 2>/dev/null || NEED_INSTALL=1
-
-if [ "${NEED_INSTALL}" = "1" ]; then
-    echo "Installing WooCommerce dependencies: filetype, phonenumbers, woocommerce..."
-    pip3 install --user --no-warn-script-location filetype phonenumbers woocommerce
-    echo "WooCommerce dependencies installed successfully."
-else
-    echo "WooCommerce dependencies already installed."
+VENV_PATH="${ODOO_VENV:-/opt/odoo-venv}"
+if [ ! -x "${VENV_PATH}/bin/python" ]; then
+    echo "Missing Python virtual environment at ${VENV_PATH}. Rebuild the image."
+    exit 1
 fi
+
+echo "Using WooCommerce dependency venv at ${VENV_PATH}."
+VENV_SITE_PACKAGES="$("${VENV_PATH}/bin/python" - <<'PY'
+import site
+print(site.getsitepackages()[0])
+PY
+)"
+if [ -n "${PYTHONPATH}" ]; then
+    export PYTHONPATH="${VENV_SITE_PACKAGES}:${PYTHONPATH}"
+else
+    export PYTHONPATH="${VENV_SITE_PACKAGES}"
+fi
+
+python3 -c "import filetype, phonenumbers, woocommerce" >/dev/null
+echo "WooCommerce dependencies are importable."
 
 # Initialize an empty database so Odoo can serve HTTP/websocket requests.
 export DB_HOST="${HOST:-db}"
