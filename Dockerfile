@@ -13,8 +13,11 @@ RUN apt-get update \
 
 ENV ODOO_VENV=/opt/odoo-venv
 
+COPY scripts/patch_woocommerce_connector.py /usr/local/bin/patch_woocommerce_connector.py
+
 # Kopiera OCA community-moduler
 COPY custom_addons/ /mnt/extra-addons/
+RUN python3 /usr/local/bin/patch_woocommerce_connector.py
 
 # Kopiera dina egna moduler
 COPY my_addons/ /mnt/extra-addons/
