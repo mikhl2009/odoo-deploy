@@ -31,7 +31,6 @@ services:
       DB_NAME: ${POSTGRES_DB:-odoo}
     volumes:
       - odoo-web-fresh:/var/lib/odoo
-      - odoo-addons-fresh:/mnt/extra-addons
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.create_connection(('127.0.0.1', 8069), 3); s.close()\""]
       interval: 30s
@@ -43,4 +42,3 @@ services:
 volumes:
   odoo-db-fresh:
   odoo-web-fresh:
-  odoo-addons-fresh:

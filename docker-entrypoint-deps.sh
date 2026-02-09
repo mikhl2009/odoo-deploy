@@ -22,6 +22,15 @@ fi
 python3 -c "import filetype, phonenumbers, woocommerce" >/dev/null
 echo "WooCommerce dependencies are importable."
 
+# Ensure WooCommerce connector patch is applied on the live addons path.
+# This is required when /mnt/extra-addons is backed by a persistent volume.
+if [ -x /usr/local/bin/patch_woocommerce_connector.py ]; then
+    python3 /usr/local/bin/patch_woocommerce_connector.py \
+        /mnt/extra-addons/odoo-woocommerce-sync/woocommerce_sync/models/connector.py
+else
+    echo "Warning: patch_woocommerce_connector.py not found; skipping connector runtime patch."
+fi
+
 # Initialize an empty database so Odoo can serve HTTP/websocket requests.
 export DB_HOST="${HOST:-db}"
 export DB_PORT="${PORT:-5432}"
