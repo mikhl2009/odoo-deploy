@@ -47,3 +47,11 @@ git submodule update --init --recursive
 | POSTGRES_USER | Databas-användare |
 | POSTGRES_PASSWORD | Databas-lösenord |
 | POSTGRES_DB | Databasnamn |
+
+## Websocket in production
+
+If you run `workers > 0` in Odoo, your reverse proxy must route `/websocket` to the evented port `8072`.
+If `/websocket` is routed to `8069`, you will get:
+`RuntimeError: Couldn't bind the websocket. Is the connection opened on the evented port (8072)?`
+
+This repository currently defaults to `workers = 0` in `config/odoo.conf` for stable operation without extra proxy routing rules.
