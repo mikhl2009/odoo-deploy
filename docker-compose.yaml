@@ -27,6 +27,7 @@ services:
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
       PASSWORD: ${POSTGRES_PASSWORD:-odoo_secret_2026}
+      DB_NAME: ${POSTGRES_DB:-odoo}
     volumes:
       - odoo-web-fresh:/var/lib/odoo
       - odoo-addons-fresh:/mnt/extra-addons

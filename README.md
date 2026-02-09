@@ -11,7 +11,7 @@ Komplett ERP-system med WMS, PIM, WooCommerce-sync, frakt, kundservice och retur
 ## Snabbstart (lokal utveckling)
 
 ```bash
-docker compose up -d
+docker compose -f docker-compose.yaml up -d
 # Öppna http://localhost:8069
 ```
 
@@ -23,7 +23,7 @@ Repot är kopplat till Coolify via GitHub. Push till `main` → auto-deploy.
 
 ```
 ├── Dockerfile              # Bygger Odoo + alla addons
-├── docker-compose.yml      # Odoo + PostgreSQL
+├── docker-compose.yaml     # Odoo + PostgreSQL
 ├── config/odoo.conf        # Odoo-konfiguration
 ├── custom_addons/          # OCA community-moduler (git submodules)
 │   ├── wms/
