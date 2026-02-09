@@ -2,9 +2,6 @@ FROM odoo:18.0
 
 USER root
 
-# Install WooCommerce sync Python dependencies
-RUN pip3 install --no-cache-dir filetype phonenumbers woocommerce
-
 # Kopiera OCA community-moduler
 COPY custom_addons/ /mnt/extra-addons/
 
@@ -14,4 +11,12 @@ COPY my_addons/ /mnt/extra-addons/
 # Kopiera konfiguration
 COPY config/odoo.conf /etc/odoo/odoo.conf
 
+# Copy entrypoint script for runtime Python deps installation
+COPY docker-entrypoint-deps.sh /
+RUN chmod +x /docker-entrypoint-deps.sh
+
 USER odoo
+
+# Install Python dependencies at runtime (after container starts)
+ENTRYPOINT ["/docker-entrypoint-deps.sh"]
+CMD ["odoo"]
