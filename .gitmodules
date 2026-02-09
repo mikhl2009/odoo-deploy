@@ -29,3 +29,7 @@
 [submodule "custom_addons/odoo-woocommerce-sync"]
 	path = custom_addons/odoo-woocommerce-sync
 	url = https://github.com/roboes/odoo-woocommerce-sync.git
+[submodule "custom_addons/queue"]
+	path = custom_addons/queue
+	url = https://github.com/OCA/queue.git
+	branch = 18.0
