@@ -18,6 +18,12 @@ LOGGER_LINES = [
     """            _logger.exception(f'Error syncing WooCommerce order {woocommerce_order["id"]}: {error}')\n""",
 ]
 
+TAX_MISMATCH_BAD = """            _logger.info(f'Mismatch between Odoo and WooCommerce tax rate settings for inclusion of tax in price: {odoo_tax_rate.name}')\n"""
+TAX_MISMATCH_GOOD = """            _logger.info(\n                f\"Mismatch between Odoo and WooCommerce tax price-inclusion settings. \"\n                f\"Company default price_include={odoo_price_include_tax}, incoming price_include={price_include_tax}, tax_rate={tax_rate}\"\n            )\n"""
+
+TAX_EXCEPT_BAD = """            _logger.error(f'Failed to create or retrieve WooCommerce tax rate in Odoo: {odoo_tax_rate}%: {error}')\n"""
+TAX_EXCEPT_GOOD = """            _logger.error(f'Failed to create or retrieve WooCommerce tax rate in Odoo: {tax_rate}%: {error}')\n"""
+
 
 def main() -> int:
     target = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(TARGET_DEFAULT)
@@ -26,6 +32,8 @@ def main() -> int:
         return 1
 
     text = target.read_text(encoding="utf-8")
+    # Normalize newlines so string-based patching works regardless of source OS.
+    text = text.replace("\r\n", "\n")
     original = text
 
     # Rolling back inside queue_job_cron_jobrunner savepoints breaks transaction
@@ -40,6 +48,12 @@ def main() -> int:
         if line in text:
             text = text.replace(line, with_raise, 1)
             inserted += 1
+
+    # Fix UnboundLocalError in tax-rate helper (odoo_tax_rate used before assignment).
+    if TAX_MISMATCH_BAD in text:
+        text = text.replace(TAX_MISMATCH_BAD, TAX_MISMATCH_GOOD, 1)
+    if TAX_EXCEPT_BAD in text:
+        text = text.replace(TAX_EXCEPT_BAD, TAX_EXCEPT_GOOD, 1)
 
     if "self.env.cr.rollback()" in text:
         print("Patch failed: rollback calls still present in connector.py")
