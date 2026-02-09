@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Lägg till fält på produktformuläret -->
+    <record id="view_product_template_prima_form" model="ir.ui.view">
+        <field name="name">product.template.prima.form</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='group_general']" position="after">
+                <group string="Prima WMS" name="prima_wms">
+                    <group>
+                        <field name="supplier_sku"/>
+                        <field name="shelf_location"/>
+                    </group>
+                    <group>
+                        <field name="min_stock_qty"/>
+                        <field name="reorder_point"/>
+                    </group>
+                    <group>
+                        <field name="woo_product_id"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

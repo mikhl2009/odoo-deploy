@@ -1,0 +1,19 @@
+{
+  "python.defaultInterpreterPath": "python3",
+  "python.analysis.extraPaths": [
+    "./custom_addons",
+    "./my_addons"
+  ],
+  "files.associations": {
+    "*.xml": "xml"
+  },
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.rulers": [79, 120],
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  }
+}

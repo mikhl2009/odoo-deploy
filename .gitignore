@@ -1,0 +1,32 @@
+# Odoo
+*.pyc
+__pycache__/
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Filestore (lagras i Docker volume)
+filestore/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env.local
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Python venv (behövs inte med Docker)
+venv/
