@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo_secret_2026}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
     volumes:
-      - odoo-db-data:/var/lib/postgresql/data
+      - odoo-db-data-v2:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-odoo}"]
@@ -28,11 +28,11 @@ services:
       USER: ${POSTGRES_USER:-odoo}
       PASSWORD: ${POSTGRES_PASSWORD:-odoo_secret_2026}
     volumes:
-      - odoo-web-data:/var/lib/odoo
-      - odoo-addons:/mnt/extra-addons
+      - odoo-web-data-v2:/var/lib/odoo
+      - odoo-addons-v2:/mnt/extra-addons
     restart: unless-stopped
 
 volumes:
-  odoo-db-data:
-  odoo-web-data:
-  odoo-addons:
+  odoo-db-data-v2:
+  odoo-web-data-v2:
+  odoo-addons-v2:
