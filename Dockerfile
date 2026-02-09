@@ -11,6 +11,4 @@ COPY my_addons/ /mnt/extra-addons/
 # Kopiera konfiguration
 COPY config/odoo.conf /etc/odoo/odoo.conf
 
-USER od
-
-oo
+USER odoo
