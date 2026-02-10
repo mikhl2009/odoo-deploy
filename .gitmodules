@@ -77,3 +77,11 @@
 	path = custom_addons/social
 	url = https://github.com/OCA/social.git
 	branch = 18.0
+[submodule "custom_addons/server-ux"]
+	path = custom_addons/server-ux
+	url = https://github.com/OCA/server-ux.git
+	branch = 18.0
+[submodule "custom_addons/reporting-engine"]
+	path = custom_addons/reporting-engine
+	url = https://github.com/OCA/reporting-engine.git
+	branch = 18.0

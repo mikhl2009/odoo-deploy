@@ -16,9 +16,9 @@ import sys
 
 # ── connection defaults ────────────────────────────────────────────────
 DEFAULT_URL = "https://snushallen.cloud"
-DEFAULT_DB = "odoo_production"
+DEFAULT_DB = "odoo"
 DEFAULT_USER = "mikael@snushallen.se"
-DEFAULT_PASSWORD = "d429e24c601e4476177ecf8051d81556c8f0f7b9"  # API key
+DEFAULT_PASSWORD = "a04315610102c5d4cde37f7c8afea09d8721569a"  # API key
 
 
 # ── modules per department ─────────────────────────────────────────────
@@ -41,7 +41,7 @@ CORE_MODULES = [
     # ── Lager / WMS ──
     ("stock", "Lager / Inventory"),
     ("barcodes", "Streckkoder"),
-    ("stock_barcode", "Streckkodsscanning i lager"),
+    # stock_barcode is Enterprise-only; OCA barcode modules used instead
 
     # ── Ekonomi / Bokföring ──
     ("account", "Bokföring"),
@@ -68,8 +68,7 @@ CORE_MODULES = [
     # ── Marknadsföring ──
     ("mass_mailing", "E-postmarknadsföring"),
 
-    # ── Fakturering ──
-    ("account_invoice_extract", "AI faktura-igenkänning"),
+    # account_invoice_extract is Enterprise-only
 ]
 
 OCA_MODULES = [
@@ -95,7 +94,7 @@ OCA_MODULES = [
     ("product_multi_barcode", "Flera streckkoder per produkt"),
 
     # ── Delivery / Frakt (OCA) ──
-    ("delivery_auto_refresh", "Auto-uppdatera fraktkostnad"),
+    # delivery_auto_refresh requires sale_order_carrier_auto_assign (not available)
     ("delivery_carrier_label_default", "Standard fraktetikett"),
     ("delivery_state", "Spårningsstatus frakt"),
 
@@ -124,6 +123,10 @@ OCA_MODULES = [
     ("quality_control_oca", "Kvalitetskontroll"),
     ("mrp_multi_level", "MRP Scheduler"),
 
+    # ── Beroenden för rapporter (OCA) ──
+    ("date_range", "Datumintervall (beroende)"),
+    ("report_xlsx", "Excel-rapporter (beroende)"),
+
     # ── Ekonomi / Rapporter (OCA) ──
     ("account_financial_report", "Finansrapporter (OCA)"),
     ("account_tax_balance", "Skattebalans"),
@@ -136,8 +139,9 @@ OCA_MODULES = [
     ("product_variant_default_code", "Auto-generera artikelnummer varianter"),
 
     # ── Print / Etikett (OCA) ──
-    ("base_report_to_printer", "Skriv ut rapporter direkt"),
-    ("printer_zpl2", "ZPL2 etikettskrivare"),
+    # base_report_to_printer + printer_zpl2 require pycups (CUPS print server) - enable if needed
+    # ("base_report_to_printer", "Skriv ut rapporter direkt"),
+    # ("printer_zpl2", "ZPL2 etikettskrivare"),
 
     # ── Social / Meddelanden (OCA) ──
     ("mail_gateway", "Mail Gateway"),
@@ -202,6 +206,8 @@ def install_module(models, uid, db, password, name, desc, dry_run=False):
         'ir.module.module', 'read',
         [ids[0]], {'fields': ['state', 'shortdesc']}
     )
+    if isinstance(info, list):
+        info = info[0]
     state = info['state']
 
     if state == 'installed':
