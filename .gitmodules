@@ -33,3 +33,47 @@
 	path = custom_addons/queue
 	url = https://github.com/OCA/queue.git
 	branch = 18.0
+[submodule "custom_addons/stock-logistics-barcode"]
+	path = custom_addons/stock-logistics-barcode
+	url = https://github.com/OCA/stock-logistics-barcode.git
+	branch = 18.0
+[submodule "custom_addons/stock-logistics-workflow"]
+	path = custom_addons/stock-logistics-workflow
+	url = https://github.com/OCA/stock-logistics-workflow.git
+	branch = 18.0
+[submodule "custom_addons/delivery-carrier"]
+	path = custom_addons/delivery-carrier
+	url = https://github.com/OCA/delivery-carrier.git
+	branch = 18.0
+[submodule "custom_addons/helpdesk"]
+	path = custom_addons/helpdesk
+	url = https://github.com/OCA/helpdesk.git
+	branch = 18.0
+[submodule "custom_addons/product-variant"]
+	path = custom_addons/product-variant
+	url = https://github.com/OCA/product-variant.git
+	branch = 18.0
+[submodule "custom_addons/report-print-send"]
+	path = custom_addons/report-print-send
+	url = https://github.com/OCA/report-print-send.git
+	branch = 18.0
+[submodule "custom_addons/crm"]
+	path = custom_addons/crm
+	url = https://github.com/OCA/crm.git
+	branch = 18.0
+[submodule "custom_addons/hr"]
+	path = custom_addons/hr
+	url = https://github.com/OCA/hr.git
+	branch = 18.0
+[submodule "custom_addons/project"]
+	path = custom_addons/project
+	url = https://github.com/OCA/project.git
+	branch = 18.0
+[submodule "custom_addons/manufacture"]
+	path = custom_addons/manufacture
+	url = https://github.com/OCA/manufacture.git
+	branch = 18.0
+[submodule "custom_addons/social"]
+	path = custom_addons/social
+	url = https://github.com/OCA/social.git
+	branch = 18.0

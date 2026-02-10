@@ -49,6 +49,22 @@ git submodule add -b 18.0 https://github.com/OCA/account-financial-reporting.git
 Write-Host "📦 Utskriftshantering..." -ForegroundColor Yellow
 git submodule add -b 18.0 https://github.com/OCA/report-print-send.git custom_addons/report-print-send
 
+# === NYA AVDELNINGAR ===
+Write-Host "📦 CRM (kundrelationer)..." -ForegroundColor Green
+git submodule add -b 18.0 https://github.com/OCA/crm.git custom_addons/crm
+
+Write-Host "📦 HR (personalhantering)..." -ForegroundColor Green
+git submodule add -b 18.0 https://github.com/OCA/hr.git custom_addons/hr
+
+Write-Host "📦 Projekthantering..." -ForegroundColor Green
+git submodule add -b 18.0 https://github.com/OCA/project.git custom_addons/project
+
+Write-Host "📦 Tillverkning / MRP..." -ForegroundColor Green
+git submodule add -b 18.0 https://github.com/OCA/manufacture.git custom_addons/manufacture
+
+Write-Host "📦 Social / Meddelanden..." -ForegroundColor Yellow
+git submodule add -b 18.0 https://github.com/OCA/social.git custom_addons/social
+
 # === WOOCOMMERCE ===
 Write-Host "📦 WooCommerce Sync..." -ForegroundColor Magenta
 git submodule add https://github.com/roboes/odoo-woocommerce-sync.git custom_addons/odoo-woocommerce-sync
