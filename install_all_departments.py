@@ -177,6 +177,10 @@ def parse_args():
                    help="Skip OCA modules (install only core)")
     p.add_argument("--dry-run", action="store_true",
                    help="Only check availability, don't install")
+    p.add_argument("--pause-cron", action="store_true",
+                   help="Temporarily disable all scheduled actions during module installation")
+    p.add_argument("--cron-wait", type=int, default=30,
+                   help="Seconds to wait after pausing cron jobs (default: 30)")
     return p.parse_args()
 
 
@@ -196,6 +200,38 @@ def update_module_list(models, uid, db, password):
     models.execute_kw(db, uid, password,
                       'ir.module.module', 'update_list', [])
     print("Module list updated.")
+
+
+def pause_scheduled_actions(models, uid, db, password, wait_seconds=30):
+    cron_ids = models.execute_kw(
+        db, uid, password,
+        "ir.cron", "search",
+        [[["active", "=", True]]],
+    )
+    if not cron_ids:
+        print("\nNo active scheduled actions to pause.")
+        return []
+    models.execute_kw(
+        db, uid, password,
+        "ir.cron", "write",
+        [cron_ids, {"active": False}],
+    )
+    print(f"\nPaused {len(cron_ids)} scheduled actions.")
+    if wait_seconds > 0:
+        print(f"Waiting {wait_seconds}s for running cron transactions to finish...")
+        time.sleep(wait_seconds)
+    return cron_ids
+
+
+def resume_scheduled_actions(models, uid, db, password, cron_ids):
+    if not cron_ids:
+        return
+    models.execute_kw(
+        db, uid, password,
+        "ir.cron", "write",
+        [cron_ids, {"active": True}],
+    )
+    print(f"Resumed {len(cron_ids)} scheduled actions.")
 
 
 def install_module(models, uid, db, password, name, desc, dry_run=False):
@@ -274,41 +310,51 @@ def main():
     uid, models = connect(args.url, args.db, args.user, args.password)
     update_module_list(models, uid, args.db, args.password)
 
-    total = {"installed": 0, "pending": 0, "missing": 0, "error": 0}
+    paused_cron_ids = []
+    if args.pause_cron and not args.dry_run:
+        paused_cron_ids = pause_scheduled_actions(
+            models, uid, args.db, args.password, wait_seconds=args.cron_wait
+        )
 
-    if not args.skip_core:
-        s = run_batch(models, uid, args.db, args.password,
-                      "ODOO CORE MODULES", CORE_MODULES, args.dry_run)
-        for k in total:
-            total[k] += s[k]
+    try:
+        total = {"installed": 0, "pending": 0, "missing": 0, "error": 0}
 
-    if not args.skip_oca:
-        s = run_batch(models, uid, args.db, args.password,
-                      "OCA COMMUNITY MODULES", OCA_MODULES, args.dry_run)
-        for k in total:
-            total[k] += s[k]
+        if not args.skip_core:
+            s = run_batch(models, uid, args.db, args.password,
+                          "ODOO CORE MODULES", CORE_MODULES, args.dry_run)
+            for k in total:
+                total[k] += s[k]
 
-    # ── Summary ──
-    print(f"\n{'='*70}")
-    print("  SUMMARY")
-    print(f"{'='*70}")
-    print(f"  Installed / OK : {total['installed']}")
-    print(f"  Pending        : {total['pending']}")
-    print(f"  Missing        : {total['missing']}")
-    print(f"  Errors         : {total['error']}")
-    print(f"{'='*70}")
+        if not args.skip_oca:
+            s = run_batch(models, uid, args.db, args.password,
+                          "OCA COMMUNITY MODULES", OCA_MODULES, args.dry_run)
+            for k in total:
+                total[k] += s[k]
 
-    if total['missing']:
-        print("\nMissing modules are likely not in addons_path.")
-        print("Rebuild the Docker image and restart the container,")
-        print("then run this script again.")
+        # ── Summary ──
+        print(f"\n{'='*70}")
+        print("  SUMMARY")
+        print(f"{'='*70}")
+        print(f"  Installed / OK : {total['installed']}")
+        print(f"  Pending        : {total['pending']}")
+        print(f"  Missing        : {total['missing']}")
+        print(f"  Errors         : {total['error']}")
+        print(f"{'='*70}")
 
-    if total['error']:
-        print("\nSome modules had errors. Check logs and retry.")
+        if total['missing']:
+            print("\nMissing modules are likely not in addons_path.")
+            print("Rebuild the Docker image and restart the container,")
+            print("then run this script again.")
 
-    if not total['missing'] and not total['error']:
-        print("\nAll modules installed successfully!")
-        print("All departments are ready to use in Odoo.")
+        if total['error']:
+            print("\nSome modules had errors. Check logs and retry.")
+
+        if not total['missing'] and not total['error']:
+            print("\nAll modules installed successfully!")
+            print("All departments are ready to use in Odoo.")
+    finally:
+        if paused_cron_ids:
+            resume_scheduled_actions(models, uid, args.db, args.password, paused_cron_ids)
 
 
 if __name__ == "__main__":
