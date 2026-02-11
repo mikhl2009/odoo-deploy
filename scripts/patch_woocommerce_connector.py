@@ -10,6 +10,13 @@ import sys
 
 
 TARGET_DEFAULT = "/mnt/extra-addons/odoo-woocommerce-sync/woocommerce_sync/models/connector.py"
+WIDGET_FIELD_BAD = 'name="woocommerce_default_attributes" widget="html"'
+WIDGET_FIELD_GOOD = 'name="woocommerce_default_attributes" widget="json_html"'
+WIDGET_VIEW_PATHS = (
+    Path("views/v16/product_template_form.xml"),
+    Path("views/v18/product_template_form.xml"),
+    Path("views/v19/product_template_form.xml"),
+)
 
 LOGGER_LINES = [
     """            _logger.exception(f'Error syncing WooCommerce product {woocommerce_product["name"]} (WooCommerce product ID: {woocommerce_product["id"]}): {error}')\n""",
@@ -23,6 +30,21 @@ TAX_MISMATCH_GOOD = """            _logger.info(\n                f\"Mismatch be
 
 TAX_EXCEPT_BAD = """            _logger.error(f'Failed to create or retrieve WooCommerce tax rate in Odoo: {odoo_tax_rate}%: {error}')\n"""
 TAX_EXCEPT_GOOD = """            _logger.error(f'Failed to create or retrieve WooCommerce tax rate in Odoo: {tax_rate}%: {error}')\n"""
+
+
+def patch_widget_views(module_root: Path) -> int:
+    patched = 0
+    for rel_path in WIDGET_VIEW_PATHS:
+        view_path = module_root / rel_path
+        if not view_path.exists():
+            print(f"Widget patch skipped (missing file): {view_path}")
+            continue
+        view_text = view_path.read_text(encoding="utf-8").replace("\r\n", "\n")
+        new_view_text = view_text.replace(WIDGET_FIELD_BAD, WIDGET_FIELD_GOOD)
+        if new_view_text != view_text:
+            view_path.write_text(new_view_text, encoding="utf-8", newline="\n")
+            patched += 1
+    return patched
 
 
 def main() -> int:
@@ -59,12 +81,18 @@ def main() -> int:
         print("Patch failed: rollback calls still present in connector.py")
         return 2
 
-    if text == original:
+    widget_patched = patch_widget_views(target.parent.parent)
+
+    if text == original and widget_patched == 0:
         print("Patch already applied or not needed.")
         return 0
 
-    target.write_text(text, encoding="utf-8", newline="\n")
-    print(f"Patch applied to {target} (logger raise inserts: {inserted})")
+    if text != original:
+        target.write_text(text, encoding="utf-8", newline="\n")
+    print(
+        f"Patch applied to {target} "
+        f"(logger raise inserts: {inserted}, widget view patches: {widget_patched})"
+    )
     return 0
 
 
