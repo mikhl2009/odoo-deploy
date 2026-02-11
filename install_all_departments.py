@@ -17,7 +17,7 @@ import sys
 # ── connection defaults ────────────────────────────────────────────────
 DEFAULT_URL = "https://snushallen.cloud"
 DEFAULT_DB = "odoo"
-DEFAULT_USER = "mikael@snushallen.se"
+DEFAULT_USER = "mikael@snussidan.se"
 DEFAULT_PASSWORD = "a04315610102c5d4cde37f7c8afea09d8721569a"  # API key
 MODULE_INSTALL_RETRIES = 6
 MODULE_INSTALL_RETRY_WAIT = 20
