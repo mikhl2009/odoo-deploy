@@ -7,7 +7,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git python3-full python3-venv \
     && python3 -m venv /opt/odoo-venv \
     && /opt/odoo-venv/bin/pip install --no-cache-dir --upgrade pip \
-    && /opt/odoo-venv/bin/pip install --no-cache-dir filetype phonenumbers woocommerce python-barcode packaging paramiko openupgradelib \
+    && /opt/odoo-venv/bin/pip install --no-cache-dir filetype phonenumbers woocommerce python-barcode packaging "paramiko<4.0.0" openupgradelib \
     && chmod +x /usr/local/bin/docker-entrypoint-deps.sh \
     && rm -rf /var/lib/apt/lists/*
 
