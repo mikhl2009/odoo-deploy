@@ -49,6 +49,9 @@ git submodule add -b 18.0 https://github.com/OCA/account-financial-reporting.git
 Write-Host "📦 Utskriftshantering..." -ForegroundColor Yellow
 git submodule add -b 18.0 https://github.com/OCA/report-print-send.git custom_addons/report-print-send
 
+Write-Host "📦 Multi-company (intercompany-flöden)..." -ForegroundColor Yellow
+git submodule add -b 18.0 https://github.com/OCA/multi-company.git custom_addons/multi-company
+
 # === NYA AVDELNINGAR ===
 Write-Host "📦 CRM (kundrelationer)..." -ForegroundColor Green
 git submodule add -b 18.0 https://github.com/OCA/crm.git custom_addons/crm

@@ -55,3 +55,9 @@ If `/websocket` is routed to `8069`, you will get:
 `RuntimeError: Couldn't bind the websocket. Is the connection opened on the evented port (8072)?`
 
 This repository currently defaults to `workers = 0` in `config/odoo.conf` for stable operation without extra proxy routing rules.
+
+## Intercompany (Community)
+
+For intercompany PO/SO automation in Odoo Community, see:
+
+- `INTERCOMPANY_SETUP.md`

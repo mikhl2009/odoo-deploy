@@ -76,6 +76,11 @@ OCA_MODULES = [
     ("queue_job", "Bakgrundsjobb (OCA Queue)"),
     ("queue_job_cron_jobrunner", "Cron-baserad jobbkörare"),
 
+    # ── Intercompany (OCA Community) ──
+    ("account_invoice_inter_company", "Mellanbolagsfakturor"),
+    ("purchase_sale_inter_company", "Skapa SO automatiskt från PO mellan bolag"),
+    ("purchase_sale_stock_inter_company", "Intercompany med lager/plock-synk"),
+
     # ── WooCommerce ──
     ("woocommerce_sync", "WooCommerce Sync"),
 

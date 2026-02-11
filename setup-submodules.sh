@@ -50,6 +50,9 @@ git submodule add -b 18.0 https://github.com/OCA/account-financial-reporting.git
 echo "📦 Utskriftshantering..."
 git submodule add -b 18.0 https://github.com/OCA/report-print-send.git custom_addons/report-print-send
 
+echo "📦 Multi-company (intercompany-flöden)..."
+git submodule add -b 18.0 https://github.com/OCA/multi-company.git custom_addons/multi-company
+
 # === WOOCOMMERCE ===
 echo "📦 WooCommerce Sync..."
 git submodule add https://github.com/roboes/odoo-woocommerce-sync.git custom_addons/odoo-woocommerce-sync

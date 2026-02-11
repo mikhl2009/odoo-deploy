@@ -85,3 +85,7 @@
 	path = custom_addons/reporting-engine
 	url = https://github.com/OCA/reporting-engine.git
 	branch = 18.0
+[submodule "custom_addons/multi-company"]
+	path = custom_addons/multi-company
+	url = https://github.com/OCA/multi-company.git
+	branch = 18.0
