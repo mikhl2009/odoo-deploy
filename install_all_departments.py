@@ -83,6 +83,17 @@ OCA_MODULES = [
     ("purchase_sale_inter_company", "Skapa SO automatiskt från PO mellan bolag"),
     ("purchase_sale_stock_inter_company", "Intercompany med lager/plock-synk"),
 
+    # ── Shopfloor / Barcode scanning (OCA Community) ──
+    ("component", "Komponentramverk (dependency)"),
+    ("endpoint_route_handler", "Dynamiska API-endpoints (dependency)"),
+    ("base_rest", "REST-baslager för shopfloor (dependency)"),
+    ("shopfloor_base", "Shopfloor bas"),
+    ("shopfloor_mobile_base", "Shopfloor mobil bas"),
+    ("shopfloor", "Shopfloor scannerflöden"),
+    ("shopfloor_reception", "Shopfloor mottagning"),
+    ("shopfloor_mobile", "Shopfloor mobilgränssnitt"),
+    ("shopfloor_reception_mobile", "Shopfloor mobil mottagning"),
+
     # ── WooCommerce ──
     ("woocommerce_sync", "WooCommerce Sync"),
 

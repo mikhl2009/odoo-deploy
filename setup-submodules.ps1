@@ -52,6 +52,16 @@ git submodule add -b 18.0 https://github.com/OCA/report-print-send.git custom_ad
 Write-Host "📦 Multi-company (intercompany-flöden)..." -ForegroundColor Yellow
 git submodule add -b 18.0 https://github.com/OCA/multi-company.git custom_addons/multi-company
 
+Write-Host "📦 Shopfloor scanner (Community barcode-flöden)..." -ForegroundColor Yellow
+git submodule add -b 18.0 https://github.com/OCA/shopfloor-app.git custom_addons/shopfloor-app
+git submodule add -b 18.0 https://github.com/OCA/stock-logistics-shopfloor.git custom_addons/stock-logistics-shopfloor
+
+Write-Host "📦 API/Component-beroenden för Shopfloor..." -ForegroundColor Yellow
+git submodule add -b 18.0 https://github.com/OCA/rest-framework.git custom_addons/rest-framework
+git submodule add -b 18.0 https://github.com/OCA/connector.git custom_addons/connector
+git submodule add -b 18.0 https://github.com/OCA/web-api.git custom_addons/web-api
+git submodule add -b 18.0 https://github.com/OCA/stock-logistics-tracking.git custom_addons/stock-logistics-tracking
+
 # === NYA AVDELNINGAR ===
 Write-Host "📦 CRM (kundrelationer)..." -ForegroundColor Green
 git submodule add -b 18.0 https://github.com/OCA/crm.git custom_addons/crm

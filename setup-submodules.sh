@@ -53,6 +53,16 @@ git submodule add -b 18.0 https://github.com/OCA/report-print-send.git custom_ad
 echo "📦 Multi-company (intercompany-flöden)..."
 git submodule add -b 18.0 https://github.com/OCA/multi-company.git custom_addons/multi-company
 
+echo "📦 Shopfloor scanner (Community barcode-flöde)..."
+git submodule add -b 18.0 https://github.com/OCA/shopfloor-app.git custom_addons/shopfloor-app
+git submodule add -b 18.0 https://github.com/OCA/stock-logistics-shopfloor.git custom_addons/stock-logistics-shopfloor
+
+echo "📦 API/Component-beroenden för Shopfloor..."
+git submodule add -b 18.0 https://github.com/OCA/rest-framework.git custom_addons/rest-framework
+git submodule add -b 18.0 https://github.com/OCA/connector.git custom_addons/connector
+git submodule add -b 18.0 https://github.com/OCA/web-api.git custom_addons/web-api
+git submodule add -b 18.0 https://github.com/OCA/stock-logistics-tracking.git custom_addons/stock-logistics-tracking
+
 # === WOOCOMMERCE ===
 echo "📦 WooCommerce Sync..."
 git submodule add https://github.com/roboes/odoo-woocommerce-sync.git custom_addons/odoo-woocommerce-sync

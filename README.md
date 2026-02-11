@@ -61,3 +61,9 @@ This repository currently defaults to `workers = 0` in `config/odoo.conf` for st
 For intercompany PO/SO automation in Odoo Community, see:
 
 - `INTERCOMPANY_SETUP.md`
+
+## Barcode Reception (Community)
+
+For scanner-based receiving without Enterprise barcode app, see:
+
+- `BARCODE_SHOPFLOOR_SETUP.md`

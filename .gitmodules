@@ -89,3 +89,27 @@
 	path = custom_addons/multi-company
 	url = https://github.com/OCA/multi-company.git
 	branch = 18.0
+[submodule "custom_addons/stock-logistics-shopfloor"]
+	path = custom_addons/stock-logistics-shopfloor
+	url = https://github.com/OCA/stock-logistics-shopfloor.git
+	branch = 18.0
+[submodule "custom_addons/shopfloor-app"]
+	path = custom_addons/shopfloor-app
+	url = https://github.com/OCA/shopfloor-app.git
+	branch = 18.0
+[submodule "custom_addons/rest-framework"]
+	path = custom_addons/rest-framework
+	url = https://github.com/OCA/rest-framework.git
+	branch = 18.0
+[submodule "custom_addons/connector"]
+	path = custom_addons/connector
+	url = https://github.com/OCA/connector.git
+	branch = 18.0
+[submodule "custom_addons/stock-logistics-tracking"]
+	path = custom_addons/stock-logistics-tracking
+	url = https://github.com/OCA/stock-logistics-tracking.git
+	branch = 18.0
+[submodule "custom_addons/web-api"]
+	path = custom_addons/web-api
+	url = https://github.com/OCA/web-api.git
+	branch = 18.0
