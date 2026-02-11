@@ -19,6 +19,8 @@ DEFAULT_URL = "https://snushallen.cloud"
 DEFAULT_DB = "odoo"
 DEFAULT_USER = "mikael@snushallen.se"
 DEFAULT_PASSWORD = "a04315610102c5d4cde37f7c8afea09d8721569a"  # API key
+MODULE_INSTALL_RETRIES = 6
+MODULE_INSTALL_RETRY_WAIT = 20
 
 
 # ── modules per department ─────────────────────────────────────────────
@@ -224,17 +226,32 @@ def install_module(models, uid, db, password, name, desc, dry_run=False):
         return "pending"
 
     print(f"  INSTALL  {name:<40} {desc}...")
-    try:
-        models.execute_kw(
-            db, uid, password,
-            'ir.module.module', 'button_immediate_install',
-            [[ids[0]]]
-        )
-        print(f"           {name:<40} installed!")
-        return "installed"
-    except Exception as e:
-        print(f"  ERROR    {name:<40} {e}")
-        return "error"
+    for attempt in range(1, MODULE_INSTALL_RETRIES + 1):
+        try:
+            models.execute_kw(
+                db, uid, password,
+                'ir.module.module', 'button_immediate_install',
+                [[ids[0]]]
+            )
+            print(f"           {name:<40} installed!")
+            return "installed"
+        except Exception as e:
+            err = str(e).lower()
+            is_cron_lock = (
+                "planerad åtgärd" in err
+                or "scheduled action" in err
+                or "module operations are not possible" in err
+            )
+            if is_cron_lock and attempt < MODULE_INSTALL_RETRIES:
+                print(
+                    f"  WAIT     {name:<40} "
+                    f"cron lock, retry {attempt}/{MODULE_INSTALL_RETRIES} "
+                    f"in {MODULE_INSTALL_RETRY_WAIT}s"
+                )
+                time.sleep(MODULE_INSTALL_RETRY_WAIT)
+                continue
+            print(f"  ERROR    {name:<40} {e}")
+            return "error"
 
 
 def run_batch(models, uid, db, password, label, modules, dry_run):
