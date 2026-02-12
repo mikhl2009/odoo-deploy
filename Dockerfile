@@ -29,6 +29,7 @@ RUN set -e; \
       fi; \
     }; \
     fetch_repo /mnt/extra-addons/multi-company 18.0 https://github.com/OCA/multi-company.git /mnt/extra-addons/multi-company/purchase_sale_inter_company/__manifest__.py; \
+    fetch_repo /mnt/extra-addons/server-auth 18.0 https://github.com/OCA/server-auth.git /mnt/extra-addons/server-auth/auth_api_key_group/__manifest__.py; \
     fetch_repo /mnt/extra-addons/stock-logistics-warehouse 18.0 https://github.com/OCA/stock-logistics-warehouse.git /mnt/extra-addons/stock-logistics-warehouse/stock_location_zone/__manifest__.py; \
     fetch_repo /mnt/extra-addons/stock-logistics-putaway 18.0 https://github.com/OCA/stock-logistics-putaway.git /mnt/extra-addons/stock-logistics-putaway/stock_storage_type/__manifest__.py; \
     fetch_repo /mnt/extra-addons/shopfloor-app 18.0 https://github.com/OCA/shopfloor-app.git /mnt/extra-addons/shopfloor-app/shopfloor_base/__manifest__.py; \
