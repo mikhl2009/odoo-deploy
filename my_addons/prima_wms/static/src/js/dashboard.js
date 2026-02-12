@@ -2,15 +2,14 @@
 
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
+import { rpc } from "@web/core/network/rpc";
 import { useService } from "@web/core/utils/hooks";
 
 class PrimaWmsDashboard extends Component {
     static template = "prima_wms.Dashboard";
 
     setup() {
-        this.orm = useService("orm");
         this.action = useService("action");
-        this.rpc = useService("rpc");
 
         this.state = useState({
             data: {},
@@ -25,7 +24,7 @@ class PrimaWmsDashboard extends Component {
     async loadDashboardData() {
         this.state.loading = true;
         try {
-            const result = await this.rpc("/prima_wms/dashboard_data", {});
+            const result = await rpc("/prima_wms/dashboard_data", {});
             this.state.data = result;
         } catch (e) {
             console.error("Dashboard data error:", e);
