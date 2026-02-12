@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== Inventeringsguide ========== -->
+    <record id="view_prima_stocktake_wizard_form" model="ir.ui.view">
+        <field name="name">prima.stocktake.wizard.form</field>
+        <field name="model">prima.stocktake.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Inventering">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Instruktion:</strong> Lämna fält tomt = ingen ändring.
+                        Skriv ny siffra = systemet justerar lagret och sparar historik.
+                        <br/>Tips: Du kan söka och bläddra mellan sidor.
+                    </div>
+                    <group>
+                        <field name="note" placeholder="t.ex. Inventering butik 2025-12-26"/>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="product_sku" string="Art.nr" readonly="1"/>
+                            <field name="product_name" string="Namn" readonly="1"/>
+                            <field name="brand_name" string="Varumärke" readonly="1" optional="show"/>
+                            <field name="current_qty" string="Nuvarande" readonly="1"/>
+                            <field name="new_qty" string="Inventerat (nytt saldo)"/>
+                            <field name="diff" string="Diff" decoration-danger="diff &lt; 0" decoration-success="diff &gt; 0"/>
+                            <field name="product_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </sheet>
+                <footer>
+                    <button name="action_save_stocktake" type="object"
+                            string="Spara inventering" class="btn-primary"/>
+                    <button string="Avbryt" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action: Inventering -->
+    <record id="action_prima_stocktake" model="ir.actions.act_window">
+        <field name="name">Inventering</field>
+        <field name="res_model">prima.stocktake.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+</odoo>

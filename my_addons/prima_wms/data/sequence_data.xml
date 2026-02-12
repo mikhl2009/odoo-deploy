@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_prima_waste" model="ir.sequence">
+        <field name="name">Prima Svinnlogg</field>
+        <field name="code">prima.waste.log</field>
+        <field name="prefix">SVINN/</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

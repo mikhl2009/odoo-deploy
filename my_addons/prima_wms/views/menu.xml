@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== HUVUDMENY ========== -->
+    <menuitem
+        id="menu_prima_wms_root"
+        name="WMS"
+        sequence="5"
+    />
+
+    <!-- Översikt / Dashboard -->
+    <menuitem
+        id="menu_prima_dashboard"
+        name="Översikt"
+        parent="menu_prima_wms_root"
+        action="action_prima_dashboard"
+        sequence="1"
+    />
+
+    <!-- Produkter -->
+    <menuitem
+        id="menu_prima_products"
+        name="Produkter"
+        parent="menu_prima_wms_root"
+        sequence="10"
+    />
+    <menuitem
+        id="menu_prima_products_all"
+        name="Alla produkter"
+        parent="menu_prima_products"
+        action="action_prima_product_list"
+        sequence="1"
+    />
+    <menuitem
+        id="menu_prima_products_low_stock"
+        name="Lågt lagersaldo"
+        parent="menu_prima_products"
+        action="action_prima_low_stock"
+        sequence="2"
+    />
+    <menuitem
+        id="menu_prima_brands"
+        name="Varumärken"
+        parent="menu_prima_products"
+        action="action_prima_brand_list"
+        sequence="3"
+    />
+
+    <!-- Inventering -->
+    <menuitem
+        id="menu_prima_inventory"
+        name="Inventering"
+        parent="menu_prima_wms_root"
+        sequence="20"
+    />
+    <menuitem
+        id="menu_prima_stocktake"
+        name="Ny inventering"
+        parent="menu_prima_inventory"
+        action="action_prima_stocktake"
+        sequence="1"
+    />
+
+    <!-- Inköp -->
+    <menuitem
+        id="menu_prima_purchase"
+        name="Inköp"
+        parent="menu_prima_wms_root"
+        sequence="30"
+    />
+    <menuitem
+        id="menu_prima_purchase_orders"
+        name="Inköpsorder"
+        parent="menu_prima_purchase"
+        action="action_prima_purchase_orders"
+        sequence="1"
+    />
+    <menuitem
+        id="menu_prima_receive"
+        name="Inleverans"
+        parent="menu_prima_purchase"
+        action="action_prima_incoming_pickings"
+        sequence="2"
+    />
+    <menuitem
+        id="menu_prima_suppliers"
+        name="Leverantörer"
+        parent="menu_prima_purchase"
+        action="action_prima_suppliers"
+        sequence="3"
+    />
+
+    <!-- Svinn -->
+    <menuitem
+        id="menu_prima_waste"
+        name="Svinn"
+        parent="menu_prima_wms_root"
+        sequence="35"
+    />
+    <menuitem
+        id="menu_prima_waste_register"
+        name="Registrera svinn"
+        parent="menu_prima_waste"
+        action="action_prima_waste_wizard"
+        sequence="1"
+    />
+    <menuitem
+        id="menu_prima_waste_log"
+        name="Svinnlogg"
+        parent="menu_prima_waste"
+        action="action_prima_waste_log"
+        sequence="2"
+    />
+
+    <!-- Rapporter -->
+    <menuitem
+        id="menu_prima_reports"
+        name="Rapporter"
+        parent="menu_prima_wms_root"
+        action="action_prima_reports"
+        sequence="40"
+    />
+
+    <!-- Historik -->
+    <menuitem
+        id="menu_prima_history"
+        name="Historik"
+        parent="menu_prima_wms_root"
+        action="action_prima_inventory_log"
+        sequence="50"
+    />
+</odoo>

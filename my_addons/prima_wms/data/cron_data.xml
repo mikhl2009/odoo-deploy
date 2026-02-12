@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Daglig uppdatering av lågt lagersaldo-flagga -->
+    <record id="cron_update_low_stock" model="ir.cron">
+        <field name="name">Prima WMS: Uppdatera lågt lagersaldo</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="state">code</field>
+        <field name="code">
+products = env["product.template"].search([("type", "=", "product")])
+products._compute_is_low_stock()
+        </field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

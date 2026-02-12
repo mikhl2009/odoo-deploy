@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Lägg till fält på produktformuläret -->
+    <!-- ========== Produktformulär — utöka med WMS-fält ========== -->
     <record id="view_product_template_prima_form" model="ir.ui.view">
         <field name="name">product.template.prima.form</field>
         <field name="model">product.template</field>
@@ -10,17 +10,88 @@
                 <group string="Prima WMS" name="prima_wms">
                     <group>
                         <field name="supplier_sku"/>
+                        <field name="smd_nr"/>
                         <field name="shelf_location"/>
+                        <field name="prima_brand_id"/>
                     </group>
                     <group>
                         <field name="min_stock_qty"/>
-                        <field name="reorder_point"/>
-                    </group>
-                    <group>
+                        <field name="is_low_stock" readonly="1"/>
+                        <field name="last_purchase_price"/>
                         <field name="woo_product_id"/>
                     </group>
                 </group>
             </xpath>
         </field>
+    </record>
+
+    <!-- ========== Produktlista — WMS-vy ========== -->
+    <record id="view_product_template_prima_list" model="ir.ui.view">
+        <field name="name">product.template.prima.list</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="is_low_stock == True">
+                <field name="default_code" string="Art.nr"/>
+                <field name="name"/>
+                <field name="prima_brand_id"/>
+                <field name="qty_available" string="Saldo"/>
+                <field name="incoming_qty_prima" string="På väg"/>
+                <field name="min_stock_qty" string="Min"/>
+                <field name="is_low_stock" column_invisible="1"/>
+                <field name="stock_value_fifo" string="Lagervärde"/>
+                <field name="shelf_location"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========== Produktsökning ========== -->
+    <record id="view_product_template_prima_search" model="ir.ui.view">
+        <field name="name">product.template.prima.search</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Namn / Art.nr" filter_domain="['|', ('name', 'ilike', self), ('default_code', 'ilike', self)]"/>
+                <field name="prima_brand_id"/>
+                <field name="shelf_location"/>
+                <separator/>
+                <filter name="filter_low_stock" string="Lågt lagersaldo" domain="[('is_low_stock', '=', True)]"/>
+                <filter name="filter_in_stock" string="I lager" domain="[('qty_available', '>', 0)]"/>
+                <filter name="filter_no_stock" string="Slut i lager" domain="[('qty_available', '&lt;=', 0), ('type', '=', 'product')]"/>
+                <separator/>
+                <group expand="0" string="Gruppera">
+                    <filter name="group_brand" string="Varumärke" context="{'group_by': 'prima_brand_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ========== Action: Alla produkter ========== -->
+    <record id="action_prima_product_list" model="ir.actions.act_window">
+        <field name="name">Produkter</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form,kanban</field>
+        <field name="domain">[('type', '=', 'product')]</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_product_template_prima_list')})]"/>
+        <field name="search_view_id" ref="view_product_template_prima_search"/>
+    </record>
+
+    <!-- ========== Action: Lågt lagersaldo ========== -->
+    <record id="action_prima_low_stock" model="ir.actions.act_window">
+        <field name="name">Lågt lagersaldo</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_low_stock', '=', True)]</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_product_template_prima_list')})]"/>
+        <field name="search_view_id" ref="view_product_template_prima_search"/>
+    </record>
+
+    <!-- ========== Action: Leverantörer ========== -->
+    <record id="action_prima_suppliers" model="ir.actions.act_window">
+        <field name="name">Leverantörer</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('supplier_rank', '>', 0)]</field>
     </record>
 </odoo>

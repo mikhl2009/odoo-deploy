@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="prima_wms.Dashboard">
+        <div class="o_action" style="background: #f0f2f5; min-height: 100vh; padding: 24px;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+
+                <!-- Header -->
+                <h2 style="font-weight: 700; margin-bottom: 24px; color: #1a1a2e;">
+                    Översikt
+                </h2>
+
+                <!-- Loading -->
+                <div t-if="state.loading" class="text-center py-5">
+                    <i class="fa fa-spinner fa-spin fa-3x text-muted"/>
+                    <p class="text-muted mt-2">Laddar dashboard...</p>
+                </div>
+
+                <div t-if="!state.loading">
+                    <!-- KPI Cards -->
+                    <div class="row g-3 mb-4">
+                        <!-- Produkter -->
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="card shadow-sm h-100 text-center" style="cursor:pointer; border:none; border-radius:12px;" t-on-click="openProducts">
+                                <div class="card-body py-4">
+                                    <i class="fa fa-cubes fa-2x mb-2" style="color: #dc3545;"/>
+                                    <div class="text-muted small">Produkter</div>
+                                    <div class="fw-bold fs-4" t-out="formatNumber(state.data.product_count)"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- I lager -->
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="card shadow-sm h-100 text-center" style="border:none; border-radius:12px;">
+                                <div class="card-body py-4">
+                                    <i class="fa fa-warehouse fa-2x mb-2" style="color: #dc3545;"/>
+                                    <div class="text-muted small">I lager (antal)</div>
+                                    <div class="fw-bold fs-4" t-out="formatNumber(state.data.total_stock)"/>
+                                    <div class="text-muted small">
+                                        På väg: <t t-out="formatNumber(state.data.total_incoming)"/> st
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lagervärde -->
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="card shadow-sm h-100 text-center" style="border:none; border-radius:12px;">
+                                <div class="card-body py-4">
+                                    <i class="fa fa-coins fa-2x mb-2" style="color: #dc3545;"/>
+                                    <div class="text-muted small">Lagervärde (FIFO)</div>
+                                    <div class="fw-bold fs-4" t-out="formatCurrency(state.data.total_value)"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lågt saldo -->
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="card shadow-sm h-100 text-center" style="cursor:pointer; border:none; border-radius:12px;" t-on-click="openLowStock">
+                                <div class="card-body py-4">
+                                    <i class="fa fa-exclamation-triangle fa-2x mb-2" style="color: #dc3545;"/>
+                                    <div class="text-muted small">Lågt Lagersaldo</div>
+                                    <div class="fw-bold fs-4" style="color: #dc3545;" t-out="formatNumber(state.data.low_stock_count) + ' st'"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Försäljning vecka -->
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="card shadow-sm h-100 text-center" style="border:none; border-radius:12px;">
+                                <div class="card-body py-4">
+                                    <i class="fa fa-chart-line fa-2x mb-2" style="color: #dc3545;"/>
+                                    <div class="text-muted small">Försäljning denna vecka</div>
+                                    <div class="fw-bold fs-4" t-out="formatNumber(state.data.sales_this_week) + ' st'"/>
+                                    <div class="text-muted small">
+                                        Dagens: <t t-out="formatNumber(state.data.sales_today)"/> st
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ordrar vecka -->
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="card shadow-sm h-100 text-center" style="border:none; border-radius:12px;">
+                                <div class="card-body py-4">
+                                    <i class="fa fa-shopping-cart fa-2x mb-2" style="color: #dc3545;"/>
+                                    <div class="text-muted small">Unika ordrar denna vecka</div>
+                                    <div class="fw-bold fs-4" t-out="formatNumber(state.data.unique_orders_week) + ' st'"/>
+                                    <div class="text-muted small">
+                                        Dagens: <t t-out="formatNumber(state.data.unique_orders_today)"/> st
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Snabbgenvägar + Status -->
+                    <div class="row g-3">
+                        <!-- Snabbgenvägar -->
+                        <div class="col-md-6">
+                            <div class="card shadow-sm" style="border:none; border-radius:12px;">
+                                <div class="card-body">
+                                    <h5 class="fw-bold mb-1">Snabbgenvägar</h5>
+                                    <p class="text-muted small mb-3">Vanliga flöden</p>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button class="btn btn-danger btn-sm" t-on-click="openNewProduct">
+                                            Lägg till produkt
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" t-on-click="openNewPO">
+                                            Skapa inköpsorder
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" t-on-click="openReceive">
+                                            Registrera inleverans
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" t-on-click="openStocktake">
+                                            Inventering
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" t-on-click="openWaste">
+                                            Registrera svinn
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="col-md-6">
+                            <div class="card shadow-sm" style="border:none; border-radius:12px;">
+                                <div class="card-body">
+                                    <h5 class="fw-bold mb-3">Status</h5>
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                                        <span class="badge bg-light text-dark border" style="cursor:pointer;" t-on-click="openBrands">
+                                            Varumärken: <t t-out="state.data.brand_count"/>
+                                        </span>
+                                        <span class="badge bg-light text-dark border" style="cursor:pointer;" t-on-click="openSuppliers">
+                                            Leverantörer: <t t-out="state.data.supplier_count"/>
+                                        </span>
+                                        <span class="badge text-white" style="background:#e5a100; cursor:pointer;" t-on-click="openPurchaseOrders">
+                                            Öppna inköpsorder: <t t-out="state.data.open_po_count"/>
+                                        </span>
+                                    </div>
+                                    <div class="text-muted small mt-3">
+                                        WooCommerce-orderwebhook:
+                                        <code>/api/webhooks/woocommerce/order</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== Svinnregistrering Wizard ========== -->
+    <record id="view_prima_waste_wizard_form" model="ir.ui.view">
+        <field name="name">prima.waste.wizard.form</field>
+        <field name="model">prima.waste.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Registrera Svinn">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="quantity"/>
+                        </group>
+                        <group>
+                            <field name="reason"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note" placeholder="Valfri notering..."/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_register_waste" type="object"
+                            string="Registrera svinn" class="btn-warning"/>
+                    <button string="Avbryt" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action: Registrera Svinn -->
+    <record id="action_prima_waste_wizard" model="ir.actions.act_window">
+        <field name="name">Registrera Svinn</field>
+        <field name="res_model">prima.waste.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

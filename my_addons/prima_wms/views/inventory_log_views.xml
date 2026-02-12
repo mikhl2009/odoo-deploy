@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== Historik / Lagerrörelselogg ========== -->
+    <record id="view_prima_inventory_log_list" model="ir.ui.view">
+        <field name="name">prima.inventory.log.list</field>
+        <field name="model">prima.inventory.log</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" decoration-danger="quantity &lt; 0" decoration-success="quantity &gt; 0">
+                <field name="create_date" string="Tid"/>
+                <field name="product_name" string="Produkt"/>
+                <field name="product_sku" string="Art.nr"/>
+                <field name="move_type" string="Typ" widget="badge"
+                       decoration-danger="move_type == 'sale'"
+                       decoration-success="move_type == 'purchase'"
+                       decoration-warning="move_type == 'waste'"
+                       decoration-info="move_type == 'inventory'"/>
+                <field name="quantity" string="Antal"/>
+                <field name="reference" string="Referens"/>
+                <field name="note" string="Notering"/>
+                <field name="user_id" string="Skapad av" widget="many2one_avatar_user"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========== Historik Formulär ========== -->
+    <record id="view_prima_inventory_log_form" model="ir.ui.view">
+        <field name="name">prima.inventory.log.form</field>
+        <field name="model">prima.inventory.log</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="product_sku"/>
+                            <field name="move_type"/>
+                            <field name="quantity"/>
+                        </group>
+                        <group>
+                            <field name="reference"/>
+                            <field name="user_id"/>
+                            <field name="create_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                    </group>
+                    <group string="Kopplingar">
+                        <field name="stock_move_id"/>
+                        <field name="picking_id"/>
+                        <field name="sale_order_id"/>
+                        <field name="purchase_order_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ========== Historik Sök ========== -->
+    <record id="view_prima_inventory_log_search" model="ir.ui.view">
+        <field name="name">prima.inventory.log.search</field>
+        <field name="model">prima.inventory.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id" string="Produkt / Art.nr"
+                       filter_domain="['|', ('product_name', 'ilike', self), ('product_sku', 'ilike', self)]"/>
+                <field name="reference"/>
+                <field name="move_type"/>
+                <separator/>
+                <filter name="filter_sale" string="Försäljning" domain="[('move_type', '=', 'sale')]"/>
+                <filter name="filter_purchase" string="Inköp" domain="[('move_type', '=', 'purchase')]"/>
+                <filter name="filter_inventory" string="Inventering" domain="[('move_type', '=', 'inventory')]"/>
+                <filter name="filter_waste" string="Svinn" domain="[('move_type', '=', 'waste')]"/>
+                <separator/>
+                <filter name="filter_today" string="Idag"
+                        domain="[('create_date', '>=', (context_today()).strftime('%%Y-%%m-%%d'))]"/>
+                <filter name="filter_week" string="Denna vecka"
+                        domain="[('create_date', '>=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%%Y-%%m-%%d'))]"/>
+                <separator/>
+                <group expand="0" string="Gruppera">
+                    <filter name="group_type" string="Typ" context="{'group_by': 'move_type'}"/>
+                    <filter name="group_product" string="Produkt" context="{'group_by': 'product_id'}"/>
+                    <filter name="group_date" string="Datum" context="{'group_by': 'create_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ========== Action: Historik ========== -->
+    <record id="action_prima_inventory_log" model="ir.actions.act_window">
+        <field name="name">Historik</field>
+        <field name="res_model">prima.inventory.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_prima_inventory_log_search"/>
+        <field name="context">{'search_default_filter_week': 1}</field>
+    </record>
+</odoo>

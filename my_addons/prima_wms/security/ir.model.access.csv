@@ -1,1 +1,10 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_prima_brand_user,prima.brand.user,model_prima_brand,group_prima_wms_user,1,0,0,0
+access_prima_brand_manager,prima.brand.manager,model_prima_brand,group_prima_wms_manager,1,1,1,1
+access_prima_inventory_log_user,prima.inventory.log.user,model_prima_inventory_log,group_prima_wms_user,1,0,0,0
+access_prima_inventory_log_manager,prima.inventory.log.manager,model_prima_inventory_log,group_prima_wms_manager,1,1,1,1
+access_prima_waste_log_user,prima.waste.log.user,model_prima_waste_log,group_prima_wms_user,1,1,1,0
+access_prima_waste_log_manager,prima.waste.log.manager,model_prima_waste_log,group_prima_wms_manager,1,1,1,1
+access_prima_stocktake_wizard_user,prima.stocktake.wizard.user,model_prima_stocktake_wizard,group_prima_wms_user,1,1,1,1
+access_prima_stocktake_wizard_line_user,prima.stocktake.wizard.line.user,model_prima_stocktake_wizard_line,group_prima_wms_user,1,1,1,1
+access_prima_waste_wizard_user,prima.waste.wizard.user,model_prima_waste_wizard,group_prima_wms_user,1,1,1,1

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== Inköpsorder Lista — WMS-vy ========== -->
+    <record id="view_prima_purchase_order_list" model="ir.ui.view">
+        <field name="name">purchase.order.prima.list</field>
+        <field name="model">purchase.order</field>
+        <field name="arch" type="xml">
+            <list decoration-warning="state == 'purchase'" decoration-success="state == 'done'">
+                <field name="name" string="ID"/>
+                <field name="partner_id" string="Leverantör"/>
+                <field name="state" string="Status" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'purchase'"
+                       decoration-success="state == 'done'"/>
+                <field name="total_ordered_qty" string="Beställt"/>
+                <field name="total_received_qty" string="Levererat"/>
+                <field name="total_remaining_qty" string="Återstår"/>
+                <field name="date_order" string="Orderdatum"/>
+                <field name="date_planned" string="Förväntat"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========== Inköpsorder Formulär — utöka ========== -->
+    <record id="view_prima_purchase_order_form" model="ir.ui.view">
+        <field name="name">purchase.order.prima.form</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='notes']" position="before">
+                <field name="prima_notes" placeholder="WMS-notering..."/>
+            </xpath>
+            <!-- Lägg till återstår-kolumn i orderrader -->
+            <xpath expr="//field[@name='order_line']/list/field[@name='qty_received']" position="after">
+                <field name="remaining_qty" string="Återstår"/>
+                <field name="prima_brand_id" string="Varumärke" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ========== Inköpsorder Sök ========== -->
+    <record id="view_prima_purchase_order_search" model="ir.ui.view">
+        <field name="name">purchase.order.prima.search</field>
+        <field name="model">purchase.order</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <separator/>
+                <filter name="filter_open" string="Öppna / Beställda" domain="[('state', '=', 'purchase')]"/>
+                <filter name="filter_done" string="Färdiga" domain="[('state', '=', 'done')]"/>
+                <filter name="filter_draft" string="Utkast" domain="[('state', '=', 'draft')]"/>
+                <separator/>
+                <group expand="0" string="Gruppera">
+                    <filter name="group_supplier" string="Leverantör" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ========== Action: Inköpsorder ========== -->
+    <record id="action_prima_purchase_orders" model="ir.actions.act_window">
+        <field name="name">Inköpsorder</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'in', ['draft', 'purchase', 'done'])]</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_prima_purchase_order_list')})]"/>
+        <field name="search_view_id" ref="view_prima_purchase_order_search"/>
+        <field name="context">{'search_default_filter_open': 1}</field>
+    </record>
+
+    <!-- ========== Action: Inleveranser ========== -->
+    <record id="action_prima_incoming_pickings" model="ir.actions.act_window">
+        <field name="name">Inleverans</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('picking_type_id.code', '=', 'incoming')]</field>
+        <field name="context">{'search_default_ready': 1}</field>
+    </record>
+</odoo>

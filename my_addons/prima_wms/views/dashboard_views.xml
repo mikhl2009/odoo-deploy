@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard Client Action -->
+    <record id="action_prima_dashboard" model="ir.actions.client">
+        <field name="name">WMS Översikt</field>
+        <field name="tag">prima_wms_dashboard</field>
+    </record>
+</odoo>
