@@ -93,6 +93,7 @@ OCA_MODULES = [
     ("stock_storage_type", "Lagringstyp (dependency för shopfloor)"),
     ("shopfloor_base", "Shopfloor bas"),
     ("shopfloor_mobile_base", "Shopfloor mobil bas"),
+    ("shopfloor_mobile_base_auth_api_key", "Shopfloor API-nyckel inloggning"),
     ("shopfloor", "Shopfloor scannerflöden"),
     ("shopfloor_reception", "Shopfloor mottagning"),
     ("shopfloor_mobile", "Shopfloor mobilgränssnitt"),
