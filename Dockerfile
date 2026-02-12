@@ -7,7 +7,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git python3-full python3-venv \
     && python3 -m venv /opt/odoo-venv \
     && /opt/odoo-venv/bin/pip install --no-cache-dir --upgrade pip \
-    && /opt/odoo-venv/bin/pip install --no-cache-dir filetype phonenumbers woocommerce python-barcode packaging "paramiko<4.0.0" openupgradelib cerberus pyquerystring parse-accept-language apispec \
+    && /opt/odoo-venv/bin/pip install --no-cache-dir filetype phonenumbers woocommerce python-barcode packaging "paramiko<4.0.0" openupgradelib cerberus pyquerystring parse-accept-language apispec cachetools \
     && chmod +x /usr/local/bin/docker-entrypoint-deps.sh \
     && rm -rf /var/lib/apt/lists/*
 
@@ -29,6 +29,7 @@ RUN set -e; \
       fi; \
     }; \
     fetch_repo /mnt/extra-addons/multi-company 18.0 https://github.com/OCA/multi-company.git /mnt/extra-addons/multi-company/purchase_sale_inter_company/__manifest__.py; \
+    fetch_repo /mnt/extra-addons/stock-logistics-warehouse 18.0 https://github.com/OCA/stock-logistics-warehouse.git /mnt/extra-addons/stock-logistics-warehouse/stock_storage_type/__manifest__.py; \
     fetch_repo /mnt/extra-addons/shopfloor-app 18.0 https://github.com/OCA/shopfloor-app.git /mnt/extra-addons/shopfloor-app/shopfloor_base/__manifest__.py; \
     fetch_repo /mnt/extra-addons/stock-logistics-shopfloor 18.0 https://github.com/OCA/stock-logistics-shopfloor.git /mnt/extra-addons/stock-logistics-shopfloor/shopfloor_reception/__manifest__.py; \
     fetch_repo /mnt/extra-addons/rest-framework 18.0 https://github.com/OCA/rest-framework.git /mnt/extra-addons/rest-framework/base_rest/__manifest__.py; \
