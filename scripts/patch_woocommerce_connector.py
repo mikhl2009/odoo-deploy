@@ -204,6 +204,20 @@ DESCRIPTION_SALE_VARIATION_OLD = """                            'description_sal
 DESCRIPTION_SALE_VARIATION_NEW = """                            'description_sale': False,
 """
 
+STOCK_SYNC_QUANTITY_MARKER = """        # Odoo product stock quant
+        odoo_product_stock_quant = self.env['stock.quant'].search(
+"""
+STOCK_SYNC_PACK_BLOCK = """        # Shared-stock multipack setup: keep physical stock on 1-pack variant only.
+        pack_match = re.search(r'(?:^|\\D)(\\d+)\\s*[- ]?pack(?:\\b|$)', (odoo_product.display_name or '').lower())
+        if pack_match:
+            pack_size = int(pack_match.group(1))
+            sibling_variants = odoo_product.product_tmpl_id.product_variant_ids.filtered(lambda variant: variant.active)
+            has_one_pack_sibling = any(re.search(r'(?:^|\\D)1\\s*[- ]?pack(?:\\b|$)', (variant.display_name or '').lower()) for variant in sibling_variants)
+            if has_one_pack_sibling and pack_size > 1:
+                woocommerce_stock_quantity = 0.0
+
+""" + STOCK_SYNC_QUANTITY_MARKER
+
 
 def patch_widget_views(module_root: Path) -> int:
     patched = 0
@@ -282,6 +296,9 @@ def main() -> int:
         text = text.replace(DESCRIPTION_SALE_PRODUCT_OLD, DESCRIPTION_SALE_PRODUCT_NEW, 1)
     if DESCRIPTION_SALE_VARIATION_OLD in text and DESCRIPTION_SALE_VARIATION_NEW not in text:
         text = text.replace(DESCRIPTION_SALE_VARIATION_OLD, DESCRIPTION_SALE_VARIATION_NEW, 1)
+
+    if "Shared-stock multipack setup: keep physical stock on 1-pack variant only." not in text and STOCK_SYNC_QUANTITY_MARKER in text:
+        text = text.replace(STOCK_SYNC_QUANTITY_MARKER, STOCK_SYNC_PACK_BLOCK, 1)
 
     if "self.env.cr.rollback()" in text:
         print("Patch failed: rollback calls still present in connector.py")
