@@ -66,7 +66,7 @@ BARCODE_HELPER_BLOCK = """
             return False
 
         # Direct keys that some WooCommerce barcode plugins expose.
-        direct_keys = ['barcode', 'ean', 'ean13', 'gtin', 'gtin13', 'upc']
+        direct_keys = ['barcode', 'ean', 'ean13', 'gtin', 'gtin13', 'upc', 'global_unique_id']
         for key in direct_keys:
             barcode = self._barcode_normalize(woocommerce_record.get(key))
             if barcode:
