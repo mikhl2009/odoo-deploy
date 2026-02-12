@@ -90,6 +90,7 @@ OCA_MODULES = [
     ("component", "Komponentramverk (dependency)"),
     ("endpoint_route_handler", "Dynamiska API-endpoints (dependency)"),
     ("base_rest", "REST-baslager för shopfloor (dependency)"),
+    ("stock_storage_type", "Lagringstyp (dependency för shopfloor)"),
     ("shopfloor_base", "Shopfloor bas"),
     ("shopfloor_mobile_base", "Shopfloor mobil bas"),
     ("shopfloor", "Shopfloor scannerflöden"),
