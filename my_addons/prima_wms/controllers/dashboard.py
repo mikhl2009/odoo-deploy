@@ -20,10 +20,12 @@ class PrimaDashboard(http.Controller):
         Log = request.env["prima.inventory.log"]
 
         # --- Produkter ---
-        product_count = Product.search_count([("type", "=", "product")])
+        product_count = Product.search_count(
+            [("detailed_type", "in", ["product", "consu"])]
+        )
 
         # --- Lagersaldo totalt ---
-        products = Product.search([("type", "=", "product")])
+        products = Product.search([("detailed_type", "in", ["product", "consu"])])
         total_stock = sum(products.mapped("qty_available"))
 
         # --- På väg ---
