@@ -31,6 +31,120 @@ TAX_MISMATCH_GOOD = """            _logger.info(\n                f\"Mismatch be
 TAX_EXCEPT_BAD = """            _logger.error(f'Failed to create or retrieve WooCommerce tax rate in Odoo: {odoo_tax_rate}%: {error}')\n"""
 TAX_EXCEPT_GOOD = """            _logger.error(f'Failed to create or retrieve WooCommerce tax rate in Odoo: {tax_rate}%: {error}')\n"""
 
+IMPORT_IO_LINE = "from io import BytesIO\n"
+IMPORT_JSON_LINE = "import json\n"
+
+BARCODE_HELPER_BLOCK = """
+    @staticmethod
+    def _barcode_normalize(value: Any) -> str | bool:
+        if value in [None, False]:
+            return False
+
+        if isinstance(value, dict):
+            for nested_value in value.values():
+                barcode = WoocommerceSyncConnector._barcode_normalize(nested_value)
+                if barcode:
+                    return barcode
+            return False
+
+        if isinstance(value, (list, tuple, set)):
+            for nested_value in value:
+                barcode = WoocommerceSyncConnector._barcode_normalize(nested_value)
+                if barcode:
+                    return barcode
+            return False
+
+        if isinstance(value, float) and value.is_integer():
+            value = int(value)
+
+        barcode = str(value).strip().replace(' ', '')
+        return barcode if barcode else False
+
+    @api.model
+    def woocommerce_extract_barcode(self: models.Model, woocommerce_record: dict[str, Any] | None) -> str | bool:
+        if not isinstance(woocommerce_record, dict):
+            return False
+
+        # Direct keys that some WooCommerce barcode plugins expose.
+        direct_keys = ['barcode', 'ean', 'ean13', 'gtin', 'gtin13', 'upc']
+        for key in direct_keys:
+            barcode = self._barcode_normalize(woocommerce_record.get(key))
+            if barcode:
+                return barcode
+
+        meta_entries = woocommerce_record.get('meta_data') or []
+        if not isinstance(meta_entries, list):
+            return False
+
+        meta_map = {}
+        for entry in meta_entries:
+            if not isinstance(entry, dict):
+                continue
+            key = entry.get('key')
+            if not key:
+                continue
+            meta_map[str(key).strip().lower()] = entry.get('value')
+
+        meta_keys = [
+            'ean',
+            '_ean',
+            'ean13',
+            '_ean13',
+            'gtin',
+            '_gtin',
+            'gtin13',
+            '_gtin13',
+            '_alg_wc_ean',
+            '_alg_ean',
+            '_wpm_gtin_code',
+            'barcode',
+            '_barcode',
+            '_ywbc_barcode_display_value',
+        ]
+        for key in meta_keys:
+            barcode = self._barcode_normalize(meta_map.get(key))
+            if barcode:
+                return barcode
+
+        # Yoast SEO "global identifier values" format (stored as dict or JSON string).
+        yoast_identifiers = meta_map.get('wpseo_global_identifier_values')
+        if isinstance(yoast_identifiers, str):
+            try:
+                yoast_identifiers = json.loads(yoast_identifiers)
+            except ValueError:
+                yoast_identifiers = {}
+
+        if isinstance(yoast_identifiers, dict):
+            for key in ['gtin13', 'gtin14', 'gtin12', 'gtin8', 'ean', 'upc', 'isbn', 'mpn']:
+                barcode = self._barcode_normalize(yoast_identifiers.get(key))
+                if barcode:
+                    return barcode
+
+        return False
+"""
+
+IMAGE_FUNC_MARKER = "\n    @api.model\n    def image_download_file_to_base64"
+
+PRODUCT_SERVICE_BLOCK = """                'woocommerce_service': False,  # woocommerce_product.get('service', False), # Germanized field - https://vendidero.de/doc/woocommerce-germanized/products-rest-api\n            },\n        )\n"""
+PRODUCT_BARCODE_BLOCK = PRODUCT_SERVICE_BLOCK + """
+        barcode = self.woocommerce_extract_barcode(woocommerce_product)
+        if barcode:
+            product_values['barcode'] = barcode
+"""
+
+VARIATION_SERVICE_BLOCK = """                'woocommerce_service': False,  # product.get('service', False), # Germanized field - https://vendidero.de/doc/woocommerce-germanized/products-rest-api\n            },\n        )\n"""
+VARIATION_BARCODE_BLOCK = VARIATION_SERVICE_BLOCK + """
+        barcode = self.woocommerce_extract_barcode(woocommerce_variation)
+        if barcode:
+            product_variation_values['barcode'] = barcode
+"""
+
+PRODUCT_TYPE_MARKER = "            # Product type\n"
+WOO_PRODUCT_ID_BLOCK = """            if 'woo_product_id' in self.env['product.template']._fields:
+                product_values['woo_product_id'] = str(product_values['woocommerce_id'])
+
+""" + PRODUCT_TYPE_MARKER
+
 
 def patch_widget_views(module_root: Path) -> int:
     patched = 0
@@ -76,6 +190,22 @@ def main() -> int:
         text = text.replace(TAX_MISMATCH_BAD, TAX_MISMATCH_GOOD, 1)
     if TAX_EXCEPT_BAD in text:
         text = text.replace(TAX_EXCEPT_BAD, TAX_EXCEPT_GOOD, 1)
+
+    # Barcode/EAN extraction support + Prima WMS Woo ID mapping.
+    if IMPORT_JSON_LINE not in text and IMPORT_IO_LINE in text:
+        text = text.replace(IMPORT_IO_LINE, IMPORT_IO_LINE + IMPORT_JSON_LINE, 1)
+
+    if "def woocommerce_extract_barcode(" not in text and IMAGE_FUNC_MARKER in text:
+        text = text.replace(IMAGE_FUNC_MARKER, "\n" + BARCODE_HELPER_BLOCK + IMAGE_FUNC_MARKER, 1)
+
+    if "barcode = self.woocommerce_extract_barcode(woocommerce_product)" not in text and PRODUCT_SERVICE_BLOCK in text:
+        text = text.replace(PRODUCT_SERVICE_BLOCK, PRODUCT_BARCODE_BLOCK, 1)
+
+    if "barcode = self.woocommerce_extract_barcode(woocommerce_variation)" not in text and VARIATION_SERVICE_BLOCK in text:
+        text = text.replace(VARIATION_SERVICE_BLOCK, VARIATION_BARCODE_BLOCK, 1)
+
+    if "if 'woo_product_id' in self.env['product.template']._fields" not in text and PRODUCT_TYPE_MARKER in text:
+        text = text.replace(PRODUCT_TYPE_MARKER, WOO_PRODUCT_ID_BLOCK, 1)
 
     if "self.env.cr.rollback()" in text:
         print("Patch failed: rollback calls still present in connector.py")
