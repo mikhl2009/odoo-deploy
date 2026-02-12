@@ -107,7 +107,10 @@ BARCODE_HELPER_BLOCK = """
                 return barcode
 
         # Yoast SEO "global identifier values" format (stored as dict or JSON string).
-        yoast_identifiers = meta_map.get('wpseo_global_identifier_values')
+        yoast_identifiers = (
+            meta_map.get('wpseo_global_identifier_values')
+            or meta_map.get('wpseo_variation_global_identifiers_values')
+        )
         if isinstance(yoast_identifiers, str):
             try:
                 yoast_identifiers = json.loads(yoast_identifiers)
