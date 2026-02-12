@@ -23,6 +23,7 @@ MODULE_INSTALL_RETRIES = 6
 MODULE_INSTALL_RETRY_WAIT = 20
 CRON_TOGGLE_RETRIES = 4
 CRON_TOGGLE_RETRY_WAIT = 5
+CRON_PAUSE_TIMEOUT = 900
 
 
 # ── modules per department ─────────────────────────────────────────────
@@ -194,6 +195,8 @@ def parse_args():
                    help="Temporarily disable all scheduled actions during module installation")
     p.add_argument("--cron-wait", type=int, default=30,
                    help="Seconds to wait after pausing cron jobs (default: 30)")
+    p.add_argument("--cron-pause-timeout", type=int, default=CRON_PAUSE_TIMEOUT,
+                   help="Max seconds to keep retrying locked cron jobs before continuing")
     return p.parse_args()
 
 
@@ -215,7 +218,9 @@ def update_module_list(models, uid, db, password):
     print("Module list updated.")
 
 
-def pause_scheduled_actions(models, uid, db, password, wait_seconds=30):
+def pause_scheduled_actions(
+    models, uid, db, password, wait_seconds=30, pause_timeout_seconds=CRON_PAUSE_TIMEOUT
+):
     cron_ids = models.execute_kw(
         db, uid, password,
         "ir.cron", "search",
@@ -223,41 +228,64 @@ def pause_scheduled_actions(models, uid, db, password, wait_seconds=30):
     )
     if not cron_ids:
         print("\nNo active scheduled actions to pause.")
-        return []
+        return [], []
 
-    paused = []
-    locked = []
-    for cron_id in cron_ids:
-        for attempt in range(1, CRON_TOGGLE_RETRIES + 1):
-            try:
-                models.execute_kw(
-                    db, uid, password,
-                    "ir.cron", "write",
-                    [[cron_id], {"active": False}],
-                )
-                paused.append(cron_id)
-                break
-            except Exception as e:
-                err = str(e).lower()
-                is_running_lock = (
-                    "utförs för närvarande" in err
-                    or "currently executing" in err
-                    or "cannot be modified" in err
-                )
-                if is_running_lock and attempt < CRON_TOGGLE_RETRIES:
-                    time.sleep(CRON_TOGGLE_RETRY_WAIT)
-                    continue
-                locked.append(cron_id)
-                break
+    paused = set()
+    locked = list(cron_ids)
+    deadline = time.time() + max(0, pause_timeout_seconds)
+
+    while locked and time.time() < deadline:
+        remaining_locked = []
+        for cron_id in locked:
+            paused_this_round = False
+            for attempt in range(1, CRON_TOGGLE_RETRIES + 1):
+                try:
+                    models.execute_kw(
+                        db, uid, password,
+                        "ir.cron", "write",
+                        [[cron_id], {"active": False}],
+                    )
+                    paused.add(cron_id)
+                    paused_this_round = True
+                    break
+                except Exception as e:
+                    err = str(e).lower()
+                    is_running_lock = (
+                        "kan inte ändras" in err
+                        or "currently executing" in err
+                        or "cannot be modified" in err
+                        or "could not obtain lock on row in relation \"ir_cron\"" in err
+                        or "locknotavailable" in err
+                    )
+                    if is_running_lock and attempt < CRON_TOGGLE_RETRIES:
+                        time.sleep(CRON_TOGGLE_RETRY_WAIT)
+                        continue
+                    break
+            if not paused_this_round:
+                remaining_locked.append(cron_id)
+
+        locked = remaining_locked
+        if locked and time.time() < deadline:
+            retry_sleep = min(
+                max(1, CRON_TOGGLE_RETRY_WAIT * 2),
+                max(1, int(deadline - time.time())),
+            )
+            print(
+                f"{len(locked)} scheduled actions still running/locked. "
+                f"Retrying pause in {retry_sleep}s..."
+            )
+            time.sleep(retry_sleep)
 
     print(f"\nPaused {len(paused)} scheduled actions.")
     if locked:
-        print(f"Could not pause {len(locked)} running/locked scheduled actions. Continuing...")
+        print(
+            f"Could not pause {len(locked)} running/locked scheduled actions "
+            f"within timeout ({pause_timeout_seconds}s). Continuing..."
+        )
     if wait_seconds > 0:
         print(f"Waiting {wait_seconds}s for running cron transactions to finish...")
         time.sleep(wait_seconds)
-    return paused
-
+    return sorted(paused), locked
 
 def resume_scheduled_actions(models, uid, db, password, cron_ids):
     if not cron_ids:
@@ -322,6 +350,8 @@ def install_module(models, uid, db, password, name, desc, dry_run=False):
                 "planerad åtgärd" in err
                 or "scheduled action" in err
                 or "module operations are not possible" in err
+                or 'could not obtain lock on row in relation "ir_cron"' in err
+                or "locknotavailable" in err
             )
             if is_cron_lock and attempt < MODULE_INSTALL_RETRIES:
                 print(
@@ -357,9 +387,13 @@ def main():
 
     paused_cron_ids = []
     if args.pause_cron and not args.dry_run:
-        paused_cron_ids = pause_scheduled_actions(
-            models, uid, args.db, args.password, wait_seconds=args.cron_wait
+        paused_cron_ids, locked_cron_ids = pause_scheduled_actions(
+            models, uid, args.db, args.password,
+            wait_seconds=args.cron_wait,
+            pause_timeout_seconds=args.cron_pause_timeout,
         )
+        if locked_cron_ids:
+            print("Warning: some cron jobs are still running; module installation can still fail.")
 
     try:
         total = {"installed": 0, "pending": 0, "missing": 0, "error": 0}
