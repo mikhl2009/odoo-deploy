@@ -21,6 +21,8 @@ DEFAULT_USER = "mikael@snussidan.se"
 DEFAULT_PASSWORD = "a04315610102c5d4cde37f7c8afea09d8721569a"  # API key
 MODULE_INSTALL_RETRIES = 6
 MODULE_INSTALL_RETRY_WAIT = 20
+CRON_TOGGLE_RETRIES = 4
+CRON_TOGGLE_RETRY_WAIT = 5
 
 
 # ── modules per department ─────────────────────────────────────────────
@@ -222,27 +224,59 @@ def pause_scheduled_actions(models, uid, db, password, wait_seconds=30):
     if not cron_ids:
         print("\nNo active scheduled actions to pause.")
         return []
-    models.execute_kw(
-        db, uid, password,
-        "ir.cron", "write",
-        [cron_ids, {"active": False}],
-    )
-    print(f"\nPaused {len(cron_ids)} scheduled actions.")
+
+    paused = []
+    locked = []
+    for cron_id in cron_ids:
+        for attempt in range(1, CRON_TOGGLE_RETRIES + 1):
+            try:
+                models.execute_kw(
+                    db, uid, password,
+                    "ir.cron", "write",
+                    [[cron_id], {"active": False}],
+                )
+                paused.append(cron_id)
+                break
+            except Exception as e:
+                err = str(e).lower()
+                is_running_lock = (
+                    "utförs för närvarande" in err
+                    or "currently executing" in err
+                    or "cannot be modified" in err
+                )
+                if is_running_lock and attempt < CRON_TOGGLE_RETRIES:
+                    time.sleep(CRON_TOGGLE_RETRY_WAIT)
+                    continue
+                locked.append(cron_id)
+                break
+
+    print(f"\nPaused {len(paused)} scheduled actions.")
+    if locked:
+        print(f"Could not pause {len(locked)} running/locked scheduled actions. Continuing...")
     if wait_seconds > 0:
         print(f"Waiting {wait_seconds}s for running cron transactions to finish...")
         time.sleep(wait_seconds)
-    return cron_ids
+    return paused
 
 
 def resume_scheduled_actions(models, uid, db, password, cron_ids):
     if not cron_ids:
         return
-    models.execute_kw(
-        db, uid, password,
-        "ir.cron", "write",
-        [cron_ids, {"active": True}],
-    )
-    print(f"Resumed {len(cron_ids)} scheduled actions.")
+    resumed = 0
+    failed = 0
+    for cron_id in cron_ids:
+        try:
+            models.execute_kw(
+                db, uid, password,
+                "ir.cron", "write",
+                [[cron_id], {"active": True}],
+            )
+            resumed += 1
+        except Exception:
+            failed += 1
+    print(f"Resumed {resumed} scheduled actions.")
+    if failed:
+        print(f"Warning: {failed} scheduled actions could not be resumed automatically.")
 
 
 def install_module(models, uid, db, password, name, desc, dry_run=False):
