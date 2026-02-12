@@ -33,6 +33,8 @@ TAX_EXCEPT_GOOD = """            _logger.error(f'Failed to create or retrieve Wo
 
 IMPORT_IO_LINE = "from io import BytesIO\n"
 IMPORT_JSON_LINE = "import json\n"
+IMPORT_LOGGING_LINE = "import logging\n"
+IMPORT_RE_LINE = "import re\n"
 
 BARCODE_HELPER_BLOCK = """
     @staticmethod
@@ -148,6 +150,60 @@ WOO_PRODUCT_ID_BLOCK = """            if 'woo_product_id' in self.env['product.t
 
 """ + PRODUCT_TYPE_MARKER
 
+ORDER_LINE_MODELS_MARKER = """                # Odoo 'sale.order.line' model fields
+                sale_order_line_fields = {
+"""
+ORDER_LINE_MODELS_BLOCK = """                # Normalize multi-pack order lines to 1-pack stock movement.
+                normalized_product_for_stock = odoo_product_mapped
+                pack_multiplier = 1.0
+                if odoo_product_mapped and getattr(odoo_product_mapped, '_name', '') == 'product.product':
+                    candidates = [
+                        order_line_values.get('woocommerce_name') or '',
+                        order_line_values.get('woocommerce_sku') or '',
+                        odoo_product_mapped.display_name or '',
+                        ' '.join(odoo_product_mapped.product_template_attribute_value_ids.mapped('name')),
+                    ]
+                    for candidate in candidates:
+                        candidate_lower = str(candidate).lower()
+                        match = re.search(r'(?:^|\\D)(\\d+)\\s*[- ]?pack(?:\\b|$)', candidate_lower)
+                        if match:
+                            pack_multiplier = float(match.group(1))
+                            break
+                    if pack_multiplier > 1:
+                        odoo_base_variant = odoo_product_mapped.product_tmpl_id.product_variant_ids.filtered(
+                            lambda variant: variant.active
+                            and (
+                                '1-pack' in ' '.join(variant.product_template_attribute_value_ids.mapped('name')).lower()
+                                or '1 pack' in ' '.join(variant.product_template_attribute_value_ids.mapped('name')).lower()
+                            )
+                        )[:1]
+                        if odoo_base_variant:
+                            normalized_product_for_stock = odoo_base_variant
+
+                normalized_qty = float(order_line_values['woocommerce_quantity'] or 0.0) * pack_multiplier
+
+""" + ORDER_LINE_MODELS_MARKER
+
+ORDER_LINE_PRODUCT_ID_OLD = """                    'product_id': odoo_product_mapped.id if odoo_product_mapped else odoo_product.product_variant_ids[:1].id,
+"""
+ORDER_LINE_PRODUCT_ID_NEW = """                    'product_id': normalized_product_for_stock.id if normalized_product_for_stock else odoo_product.product_variant_ids[:1].id,
+"""
+
+ORDER_LINE_QTY_OLD = """                    'product_uom_qty': order_line_values['woocommerce_quantity'],
+"""
+ORDER_LINE_QTY_NEW = """                    'product_uom_qty': normalized_qty,
+"""
+
+DESCRIPTION_SALE_PRODUCT_OLD = """                    'description_sale': product_values['woocommerce_description'],
+"""
+DESCRIPTION_SALE_PRODUCT_NEW = """                    'description_sale': False,
+"""
+
+DESCRIPTION_SALE_VARIATION_OLD = """                            'description_sale': product_variation_values['woocommerce_description'],
+"""
+DESCRIPTION_SALE_VARIATION_NEW = """                            'description_sale': False,
+"""
+
 
 def patch_widget_views(module_root: Path) -> int:
     patched = 0
@@ -197,6 +253,8 @@ def main() -> int:
     # Barcode/EAN extraction support + Prima WMS Woo ID mapping.
     if IMPORT_JSON_LINE not in text and IMPORT_IO_LINE in text:
         text = text.replace(IMPORT_IO_LINE, IMPORT_IO_LINE + IMPORT_JSON_LINE, 1)
+    if IMPORT_RE_LINE not in text and IMPORT_LOGGING_LINE in text:
+        text = text.replace(IMPORT_LOGGING_LINE, IMPORT_LOGGING_LINE + IMPORT_RE_LINE, 1)
 
     if "def woocommerce_extract_barcode(" not in text and IMAGE_FUNC_MARKER in text:
         text = text.replace(IMAGE_FUNC_MARKER, "\n" + BARCODE_HELPER_BLOCK + IMAGE_FUNC_MARKER, 1)
@@ -209,6 +267,21 @@ def main() -> int:
 
     if "if 'woo_product_id' in self.env['product.template']._fields" not in text and PRODUCT_TYPE_MARKER in text:
         text = text.replace(PRODUCT_TYPE_MARKER, WOO_PRODUCT_ID_BLOCK, 1)
+
+    if "normalized_product_for_stock = odoo_product_mapped" not in text and ORDER_LINE_MODELS_MARKER in text:
+        text = text.replace(ORDER_LINE_MODELS_MARKER, ORDER_LINE_MODELS_BLOCK, 1)
+
+    if ORDER_LINE_PRODUCT_ID_OLD in text and ORDER_LINE_PRODUCT_ID_NEW not in text:
+        text = text.replace(ORDER_LINE_PRODUCT_ID_OLD, ORDER_LINE_PRODUCT_ID_NEW, 1)
+
+    if ORDER_LINE_QTY_OLD in text and ORDER_LINE_QTY_NEW not in text:
+        text = text.replace(ORDER_LINE_QTY_OLD, ORDER_LINE_QTY_NEW, 1)
+
+    # Keep sale order line labels clean: no HTML from Woo descriptions.
+    if DESCRIPTION_SALE_PRODUCT_OLD in text and DESCRIPTION_SALE_PRODUCT_NEW not in text:
+        text = text.replace(DESCRIPTION_SALE_PRODUCT_OLD, DESCRIPTION_SALE_PRODUCT_NEW, 1)
+    if DESCRIPTION_SALE_VARIATION_OLD in text and DESCRIPTION_SALE_VARIATION_NEW not in text:
+        text = text.replace(DESCRIPTION_SALE_VARIATION_OLD, DESCRIPTION_SALE_VARIATION_NEW, 1)
 
     if "self.env.cr.rollback()" in text:
         print("Patch failed: rollback calls still present in connector.py")
