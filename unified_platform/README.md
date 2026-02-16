@@ -18,7 +18,6 @@ Services:
 - API: `http://localhost:8080`
 - API docs: `http://localhost:8080/docs`
 - Web: `http://localhost:3000`
-- Postgres: `localhost:5434`
 - Redis: `localhost:6379`
 
 ## Phase 1 scope implemented
@@ -38,3 +37,4 @@ Services:
 - For Coolify Docker Compose deployments, use:
   - Base Directory: `unified_platform`
   - Docker Compose Location: `docker-compose.unified.yml`
+  - Use a separate Coolify PostgreSQL resource and set `POSTGRES_HOST` (or `DATABASE_URL`) in app environment variables.
