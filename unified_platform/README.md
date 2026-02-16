@@ -10,7 +10,6 @@ Phase 1 implementation scaffold for the unified business system:
 
 ```bash
 cd unified_platform
-cp .env.example .env
 docker compose -f docker-compose.unified.yml up --build
 ```
 
@@ -36,3 +35,6 @@ Services:
 
 - This is a production-oriented foundation, not a full 5-phase completion in one commit.
 - Phase 2-5 are prepared by contract shape (events, integration tables, route layout), but detailed logic is still to be expanded.
+- For Coolify Docker Compose deployments, use:
+  - Base Directory: `unified_platform`
+  - Docker Compose Location: `docker-compose.unified.yml`
