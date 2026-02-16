@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     postgres_db: str = Field(default="unified_erp", alias="POSTGRES_DB")
     postgres_host: str = Field(default="postgres", alias="POSTGRES_HOST")
     postgres_port: int = Field(default=5432, alias="POSTGRES_PORT")
+    database_url_override: str | None = Field(default=None, alias="DATABASE_URL")
 
     redis_url: str = Field(default="redis://redis:6379/0", alias="REDIS_URL")
 
@@ -28,6 +29,8 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
+        if self.database_url_override:
+            return self.database_url_override
         return (
             f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
