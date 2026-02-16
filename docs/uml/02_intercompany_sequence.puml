@@ -1,0 +1,22 @@
+@startuml
+title Intercompany: Vapehandel PO -> Snushallen SO -> Lager -> Kanal-sync
+
+actor "Inkopare\nVapehandel" as Buyer
+participant "Odoo Purchase\n(Vapehandel)" as PO
+participant "Intercompany Rules" as IC
+participant "Odoo Sales\n(Snushallen)" as SO
+participant "Lager SH\nStock + Shopfloor" as WH
+participant "Odoo Stock\n(Vapehandel)" as VHStock
+participant "Woo Sync" as Woo
+participant "Woo butik" as Store
+
+Buyer -> PO : Skapa PO till Snushallen
+Buyer -> PO : Bekrafta PO
+PO -> IC : Trigger intercompany regel
+IC -> SO : Skapa SO automatiskt
+SO -> WH : Skapa leverans/plock
+WH -> WH : Plocka, packa, validera
+WH -> VHStock : Inleverans/kvittens hos Vapehandel
+VHStock -> Woo : Uppdaterat tillgangligt saldo
+Woo -> Store : Lagerstatus uppdaterad
+@enduml

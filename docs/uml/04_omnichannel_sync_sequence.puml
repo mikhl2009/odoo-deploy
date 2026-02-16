@@ -1,0 +1,18 @@
+@startuml
+title Omnichannel: Woo order in, lager ut, saldo tillbaka
+
+actor "Kund" as Customer
+participant "Woo butik" as Woo
+participant "Woo Sync Connector" as Sync
+participant "Odoo Sales" as Sales
+participant "Odoo Stock" as Stock
+participant "Shopfloor/Lager" as WH
+
+Customer -> Woo : Lagger order
+Woo -> Sync : Skickar orderdata
+Sync -> Sales : Skapa SO
+Sales -> Stock : Reservera/planera leverans
+WH -> Stock : Plock + validera leverans
+Stock -> Sync : Nytt tillgangligt saldo
+Sync -> Woo : Uppdatera lager i butik
+@enduml
