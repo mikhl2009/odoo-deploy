@@ -1,0 +1,37 @@
+@startuml
+title Shopfloor Reception: Scan -> Antal -> Hyllplats -> Bekrafta
+
+start
+:Valj Inkommande leverans (VH/IN/...);
+:Scan EAN pa produkt;
+
+if (Produktrad hittad i leverans?) then (Ja)
+  :Foresla/valj move line;
+else (Nej)
+  :Visa fel och valj rad manuellt;
+endif
+
+:Ange qty done;
+
+if (Destination package behovs?) then (Ja)
+  :Scan eller skapa package;
+endif
+
+:Scan hyllplats (destination location);
+
+if (Location giltig for operation?) then (Ja)
+  :Posta line (ev auto_post_line);
+else (Nej)
+  :Visa varning/fel;
+endif
+
+if (Fler rader kvar?) then (Ja)
+  :Fortsatt scanna;
+else (Nej)
+  :Mark as done / Confirm done;
+  :Validera inleverans;
+  :Lagersaldo okar pa vald hyllplats;
+endif
+
+stop
+@enduml

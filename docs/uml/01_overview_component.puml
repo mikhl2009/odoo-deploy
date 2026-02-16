@@ -1,0 +1,56 @@
+@startuml
+title Odoo Multi-Bolag + Multi-Lager + Multi-Kanal (Oversikt)
+left to right direction
+
+actor "Kund" as Customer
+actor "Lagerpersonal" as WHUser
+actor "Inkopare" as Buyer
+actor "Salj/Admin" as Admin
+
+package "Saljkanaler" {
+  [WooCommerce\nvapehandel.se] as WooVape
+  [WooCommerce\nandra butiker] as WooOther
+}
+
+package "Odoo Plattform" {
+  [Sales + CRM] as Sales
+  [Purchase] as Purchase
+  [Stock / Inventory] as Stock
+  [Intercompany\n(OCA)] as IC
+  [Shopfloor + Scanner] as Shopfloor
+  [Woo Sync Connector] as WooSync
+  [Prima WMS] as Prima
+  [Accounting] as Acc
+}
+
+package "Bolag och Lager" {
+  [Snushallen AB\nHuvudlager SH] as SH
+  [Vapehandel.se\nLager VH] as VH
+}
+
+Customer --> WooVape : Lagger order
+Customer --> WooOther : Lagger order
+
+WooVape --> WooSync : Order / Produkt / Lagerdata
+WooOther --> WooSync : Order / Produkt / Lagerdata
+WooSync --> Sales : Skapa/uppdatera SO
+WooSync --> Stock : Lagerjustering/sync
+
+Buyer --> Purchase : Skapar PO
+Purchase --> IC : Intercompany-regler
+IC --> Sales : Auto-SO i motpartsbolag
+Sales --> Stock : Leveransorder / plock
+
+WHUser --> Shopfloor : Scannerflode
+Shopfloor --> Stock : Qty done + destination location
+Shopfloor --> Prima : Operativ WMS-data
+
+Stock --> SH : Varurorelse SH
+Stock --> VH : Varurorelse VH
+
+Sales --> Acc : Fakturaunderlag
+Purchase --> Acc : Leverantorsfakturaunderlag
+
+Admin --> Prima : KPI, lageranalys, styrning
+Admin --> IC : Multi-bolag setup
+@enduml
