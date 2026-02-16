@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.db.base import Base
 from app.db.init_db import seed_defaults
 from app.db.session import SessionLocal, engine
-from app.models import core, integration, inventory, mdm, pim, procurement  # noqa: F401
+from app.models import core, integration, inventory, mdm, pim, procurement, sales  # noqa: F401
 from app.ws.manager import ws_manager
 
 app = FastAPI(title=settings.app_name, openapi_url=f"{settings.api_v1_prefix}/openapi.json")

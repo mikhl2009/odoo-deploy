@@ -4,3 +4,4 @@ from app.models.inventory import *  # noqa: F403
 from app.models.mdm import *  # noqa: F403
 from app.models.pim import *  # noqa: F403
 from app.models.procurement import *  # noqa: F403
+from app.models.sales import *  # noqa: F403

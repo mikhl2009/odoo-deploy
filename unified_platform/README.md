@@ -28,7 +28,11 @@ Services:
   - `/api/v1/ws/dashboard`
   - `/api/v1/ws/inventory/{location_id}`
   - `/api/v1/ws/receiving/{shipment_id}`
+  - `/api/v1/ws/sync-status`
 - Minimal Scandinavian-style dashboard and key module pages in Next.js.
+- Phase 2 foundation:
+  - sales/customer/order schema and order lifecycle endpoints
+  - Woo connection + webhook ingestion + sync queue/status endpoints
 
 ## Notes
 

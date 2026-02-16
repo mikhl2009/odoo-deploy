@@ -7,7 +7,9 @@ const navItems = [
   { href: "/", label: "Dashboard" },
   { href: "/products", label: "PIM" },
   { href: "/inventory/stock", label: "Inventory" },
-  { href: "/receiving", label: "Receiving" }
+  { href: "/receiving", label: "Receiving" },
+  { href: "/sales/orders", label: "Sales" },
+  { href: "/integration/woo", label: "Woo Sync" }
 ];
 
 export function Sidebar() {

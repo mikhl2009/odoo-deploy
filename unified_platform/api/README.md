@@ -25,3 +25,5 @@ uvicorn app.main:app --reload --port 8080
 - `/api/v1/dashboard/kpis`
 - `/api/v1/integration/sync-status`
 - `/api/v1/audit/events`
+- `/api/v1/sales/*`
+- `/api/v1/integration/woo/*`
