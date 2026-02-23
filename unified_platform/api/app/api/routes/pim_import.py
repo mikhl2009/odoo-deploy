@@ -51,8 +51,30 @@ async def import_from_woo(
     if not conn:
         raise HTTPException(status_code=404, detail=f"Connection {connection_id} not found")
 
+    if not conn.consumer_key or not conn.consumer_secret:
+        raise HTTPException(
+            status_code=422,
+            detail="Connection has no consumer_key/consumer_secret. "
+                   "PATCH /integration/woo/connections/{id} to add credentials.",
+        )
+
     channel = db.get(IntStoreChannel, conn.store_channel_id)
-    company_id = channel.company_id if channel else 1
+    raw_company_id = channel.company_id if channel else 0
+
+    # Validate company_id — fall back to first active company if the stored value is bad
+    from app.models.core import CoreCompany  # noqa: PLC0415
+    from sqlalchemy import select as _select  # noqa: PLC0415
+    if raw_company_id and db.get(CoreCompany, raw_company_id):
+        company_id = raw_company_id
+    else:
+        first_company = db.scalar(_select(CoreCompany).where(CoreCompany.active.is_(True)).limit(1))
+        if not first_company:
+            raise HTTPException(status_code=422, detail="No active company found in database.")
+        company_id = first_company.id
+        logger.warning(
+            "Channel %s has invalid company_id=%s, falling back to company_id=%s",
+            conn.store_channel_id, raw_company_id, company_id,
+        )
 
     imported = updated = skipped = 0
     auth = (conn.consumer_key, conn.consumer_secret)
