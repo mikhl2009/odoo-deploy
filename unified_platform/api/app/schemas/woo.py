@@ -14,6 +14,13 @@ class StoreChannelCreate(BaseModel):
     base_url: str
 
 
+class StoreChannelUpdate(BaseModel):
+    company_id: int | None = None
+    name: str | None = None
+    base_url: str | None = None
+    channel_type: str | None = None
+
+
 class StoreConnectionCreate(BaseModel):
     store_channel_id: int
     provider: str = "woocommerce"

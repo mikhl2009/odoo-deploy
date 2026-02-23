@@ -26,6 +26,7 @@ from app.models.pim import PimProductVariant
 from app.models.sales import SalesCustomer, SalesOrder, SalesOrderEvent, SalesOrderLine
 from app.schemas.woo import (
     StoreChannelCreate,
+    StoreChannelUpdate,
     StoreConnectionCreate,
     StoreConnectionResponse,
     StoreConnectionUpdate,
@@ -88,7 +89,29 @@ def create_channel(
     return {"id": channel.id, "name": channel.name, "company_id": channel.company_id}
 
 
-@router.get("/connections", response_model=list[StoreConnectionResponse])
+@router.get("/channels", summary="List all store channels")
+def list_channels(
+    db: Session = Depends(get_db),
+    _: CoreUser = Depends(require_permission("sync.read")),
+) -> list[dict]:
+    rows = db.scalars(select(IntStoreChannel)).all()
+    return [{"id": c.id, "name": c.name, "company_id": c.company_id, "channel_type": c.channel_type, "base_url": c.base_url} for c in rows]
+
+
+@router.patch("/channels/{channel_id}", summary="Update a store channel")
+def update_channel(
+    channel_id: int,
+    payload: StoreChannelUpdate,
+    db: Session = Depends(get_db),
+    _: CoreUser = Depends(require_permission("sync.write")),
+) -> dict:
+    channel = db.get(IntStoreChannel, channel_id)
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(channel, key, value)
+    db.commit()
+    return {"id": channel.id, "name": channel.name, "company_id": channel.company_id, "channel_type": channel.channel_type, "base_url": channel.base_url}
 def list_connections(
     db: Session = Depends(get_db),
     _: CoreUser = Depends(require_permission("sync.read")),
