@@ -222,13 +222,13 @@ def seed_viewer(
             db.add(CoreRolePermission(role_id=role.id, permission_id=perm.id))
         db.flush()
 
-    viewer = db.scalar(select(CoreUser).where(CoreUser.email == "viewer@unified.local"))
+    viewer = db.scalar(select(CoreUser).where(CoreUser.email == "viewer@snushallen.cloud"))
     if viewer:
         viewer.password_hash = hash_password("viewer123")
         viewer.status = "active"
     else:
         viewer = CoreUser(
-            email="viewer@unified.local",
+            email="viewer@snushallen.cloud",
             password_hash=hash_password("viewer123"),
             status="active",
         )
@@ -237,7 +237,7 @@ def seed_viewer(
         db.add(CoreUserRole(user_id=viewer.id, role_id=role.id))
 
     db.commit()
-    return {"message": "Viewer user ready.", "email": "viewer@unified.local", "password": "viewer123"}
+    return {"message": "Viewer user ready.", "email": "viewer@snushallen.cloud", "password": "viewer123"}
 
 
 @router.post(
