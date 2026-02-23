@@ -4,7 +4,19 @@ from celery import Celery
 
 from app.core.config import settings
 
-celery_app = Celery("unified_erp", broker=settings.redis_url, backend=settings.redis_url)
+celery_app = Celery(
+    "unified_erp",
+    broker=settings.redis_url,
+    backend=settings.redis_url,
+    include=[
+        "app.tasks.wgr",
+        "app.tasks.woo",
+        "app.tasks.nshift",
+    ],
+)
+
+# Retry broker connection on startup (Celery 6.0 forward compatibility)
+celery_app.conf.broker_connection_retry_on_startup = True
 
 # ---------------------------------------------------------------------------
 # Beat schedules
