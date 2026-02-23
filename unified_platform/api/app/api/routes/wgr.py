@@ -9,11 +9,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_permission
-from app.models.core import CoreUser
-from app.models.integration import IntStoreConnection, IntSyncQueue
+from app.models.core import CoreCompany, CoreUser
+from app.models.integration import IntStoreChannel, IntStoreConnection, IntSyncQueue
 from app.services.wgr import WGRClient
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,6 @@ class WGRConnectionCreate(BaseModel):
     username: str
     password: str
     company_id: int = 1
-    location_id: int = 1
 
 
 class WGRConnectionResponse(BaseModel):
@@ -73,19 +73,54 @@ def create_connection(
     _: CoreUser = Depends(require_permission("sync.write")),
 ) -> dict[str, Any]:
     """Register a new WGR API connection."""
-    # We reuse IntStoreConnection — consumer_key = username, consumer_secret = password
-    conn = IntStoreConnection(
-        store_channel_id=body.location_id,
-        provider="wgr",
-        api_base_url=body.api_url,
-        consumer_key=body.username,
-        consumer_secret=body.password,
-        active=True,
+    company_id = body.company_id if body.company_id != 0 else 1
+
+    # Validate company exists
+    company = db.get(CoreCompany, company_id)
+    if not company:
+        companies = db.scalars(select(CoreCompany).where(CoreCompany.active.is_(True))).all()
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": f"company_id={company_id} not found.",
+                "available": [{"id": c.id, "name": c.legal_name} for c in companies],
+            },
+        )
+
+    # Auto-create a WGR system channel for this company if one doesn't exist
+    wgr_channel = db.scalar(
+        select(IntStoreChannel).where(
+            IntStoreChannel.company_id == company_id,
+            IntStoreChannel.channel_type == "wgr",
+        )
     )
-    db.add(conn)
-    db.commit()
-    db.refresh(conn)
-    return {"id": conn.id}
+    if not wgr_channel:
+        wgr_channel = IntStoreChannel(
+            company_id=company_id,
+            name="WGR Warehouse System",
+            channel_type="wgr",
+            base_url=body.api_url,
+        )
+        db.add(wgr_channel)
+        db.flush()
+
+    try:
+        conn = IntStoreConnection(
+            store_channel_id=wgr_channel.id,
+            provider="wgr",
+            api_base_url=body.api_url,
+            consumer_key=body.username,
+            consumer_secret=body.password,
+            active=True,
+        )
+        db.add(conn)
+        db.commit()
+        db.refresh(conn)
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=f"WGR connection already exists: {exc.orig}") from exc
+
+    return {"id": conn.id, "store_channel_id": wgr_channel.id, "company_id": company_id}
 
 
 @router.get("/connections", response_model=list[WGRConnectionResponse])

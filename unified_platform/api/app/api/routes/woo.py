@@ -9,10 +9,11 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_permission
-from app.models.core import CoreUser
+from app.models.core import CoreCompany, CoreUser
 from app.models.integration import (
     IntStoreChannel,
     IntStoreConnection,
@@ -38,16 +39,53 @@ from app.ws.manager import ws_manager
 router = APIRouter(prefix="/integration/woo", tags=["woo-integration"])
 
 
+@router.get("/companies", summary="List available companies (use id as company_id in channels)")
+def list_companies(
+    db: Session = Depends(get_db),
+    _: CoreUser = Depends(require_permission("sync.read")),
+) -> list[dict]:
+    rows = db.scalars(select(CoreCompany).where(CoreCompany.active.is_(True))).all()
+    return [{"id": c.id, "name": c.legal_name} for c in rows]
+
+
 @router.post("/channels")
 def create_channel(
     payload: StoreChannelCreate,
     db: Session = Depends(get_db),
     _: CoreUser = Depends(require_permission("sync.write")),
 ) -> dict:
-    channel = IntStoreChannel(**payload.model_dump())
-    db.add(channel)
-    db.commit()
-    return {"id": channel.id, "name": channel.name}
+    if payload.company_id == 0:
+        # Swagger default — try to auto-resolve the only company
+        companies = db.scalars(select(CoreCompany).where(CoreCompany.active.is_(True))).all()
+        if len(companies) == 1:
+            payload = payload.model_copy(update={"company_id": companies[0].id})
+        else:
+            available = [{"id": c.id, "name": c.legal_name} for c in companies]
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": "company_id=0 is invalid. Specify a real company_id.",
+                    "available_companies": available,
+                },
+            )
+
+    company = db.get(CoreCompany, payload.company_id)
+    if not company:
+        raise HTTPException(
+            status_code=422,
+            detail=f"company_id={payload.company_id} does not exist. "
+                   f"Use GET /api/v1/integration/woo/companies to list valid IDs.",
+        )
+
+    try:
+        channel = IntStoreChannel(**payload.model_dump())
+        db.add(channel)
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=f"Channel already exists: {exc.orig}") from exc
+
+    return {"id": channel.id, "name": channel.name, "company_id": channel.company_id}
 
 
 @router.get("/connections", response_model=list[StoreConnectionResponse])
@@ -64,10 +102,25 @@ def create_connection(
     db: Session = Depends(get_db),
     _: CoreUser = Depends(require_permission("sync.write")),
 ) -> IntStoreConnection:
-    connection = IntStoreConnection(**payload.model_dump())
-    db.add(connection)
-    db.commit()
-    db.refresh(connection)
+    channel = db.get(IntStoreChannel, payload.store_channel_id)
+    if not channel:
+        available = db.scalars(select(IntStoreChannel)).all()
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": f"store_channel_id={payload.store_channel_id} does not exist.",
+                "hint": "Create a channel first via POST /api/v1/integration/woo/channels",
+                "available_channels": [{"id": c.id, "name": c.name} for c in available],
+            },
+        )
+    try:
+        connection = IntStoreConnection(**payload.model_dump())
+        db.add(connection)
+        db.commit()
+        db.refresh(connection)
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=f"Connection already exists: {exc.orig}") from exc
     return connection
 
 
