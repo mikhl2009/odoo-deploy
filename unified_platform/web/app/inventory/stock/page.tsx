@@ -26,6 +26,10 @@ async function loadStock(): Promise<StockRow[]> {
 export default async function InventoryStockPage() {
   const rows = await loadStock();
 
+  function formatCurrency(val: any) {
+    if (val == null) return "";
+    return Number(val).toLocaleString("sv-SE", { style: "currency", currency: "SEK" });
+  }
   return (
     <section>
       <h1 className="page-title">Inventory Matrix</h1>
@@ -39,6 +43,9 @@ export default async function InventoryStockPage() {
               <th>ID</th>
               <th>Location</th>
               <th>Variant</th>
+              <th>Name</th>
+              <th>Brand</th>
+              <th>Price</th>
               <th>On Hand</th>
               <th>Reserved</th>
               <th>Available</th>
@@ -47,7 +54,7 @@ export default async function InventoryStockPage() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6}>No stock records yet.</td>
+                <td colSpan={9}>No stock records yet.</td>
               </tr>
             ) : (
               rows.map((row) => (
@@ -55,6 +62,9 @@ export default async function InventoryStockPage() {
                   <td>{row.id}</td>
                   <td>{row.location_id}</td>
                   <td>{row.variant_id}</td>
+                  <td>{row.name || ""}</td>
+                  <td>{row.brand || ""}</td>
+                  <td>{formatCurrency(row.price)}</td>
                   <td>{row.on_hand_qty}</td>
                   <td>{row.reserved_qty}</td>
                   <td>{row.available_qty}</td>

@@ -82,7 +82,45 @@ def stock(
         stmt = stmt.where(InvStockBalance.location_id == location_id)
     if variant_id:
         stmt = stmt.where(InvStockBalance.variant_id == variant_id)
-    return db.scalars(stmt.order_by(InvStockBalance.id.desc()).limit(1000)).all()
+    balances = db.scalars(stmt.order_by(InvStockBalance.id.desc()).limit(1000)).all()
+
+    # --- Enrich with product info ---
+    result = []
+    for bal in balances:
+        variant = db.get(PimProductVariant, bal.variant_id)
+        product = db.get(PimProduct, variant.product_id) if variant else None
+        brand = db.get(PimBrand, product.brand_id) if product and product.brand_id else None
+        name = None
+        if product:
+            prod_i18n = db.scalars(
+                select(PimProductI18n).where(
+                    PimProductI18n.product_id == product.id,
+                    PimProductI18n.language_code == "sv-SE",
+                )
+            ).first()
+            name = prod_i18n.name if prod_i18n else None
+        price = None
+        if variant:
+            price_item = db.scalars(
+                select(PimPriceListItem).where(
+                    PimPriceListItem.variant_id == variant.id,
+                    PimPriceListItem.min_qty == 1,
+                )
+            ).first()
+            price = price_item.unit_price if price_item else None
+        result.append({
+            "id": bal.id,
+            "company_id": bal.company_id,
+            "location_id": bal.location_id,
+            "variant_id": bal.variant_id,
+            "on_hand_qty": bal.on_hand_qty,
+            "reserved_qty": bal.reserved_qty,
+            "available_qty": bal.available_qty,
+            "name": name,
+            "brand": brand.name if brand else None,
+            "price": price,
+        })
+    return result
 
 
 @router.get("/movements", response_model=list[StockMovementResponse])

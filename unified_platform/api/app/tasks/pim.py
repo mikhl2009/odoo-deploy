@@ -17,6 +17,18 @@ from app.worker import celery_app
 
 logger = logging.getLogger(__name__)
 
+                       # --- Extract name, brand, price ---
+                       name = wv.get("name") or woo_prod.get("name") or sku
+                       brand_name = None
+                       if "brands" in wv and wv["brands"]:
+                           brand_name = wv["brands"][0].get("name")
+                       elif "brands" in woo_prod and woo_prod["brands"]:
+                           brand_name = woo_prod["brands"][0].get("name")
+                       price = wv.get("price") or wv.get("regular_price") or wv.get("sale_price")
+                       try:
+                           price = float(price) if price is not None else None
+                       except Exception:
+                           price = None
 
 @celery_app.task(
     name="app.tasks.pim.import_from_woo",
@@ -32,9 +44,37 @@ def import_from_woo(self, connection_id: int, location_id: int, seed_stock: bool
     Returns {connection_id, company_id, location_id, imported, updated, skipped, total, seed_stock}.
     """
     db = SessionLocal()
+                               brand_id=None,
     try:
         conn = db.get(IntStoreConnection, connection_id)
         if not conn:
+                       # --- Upsert brand ---
+                       if brand_name:
+                           brand = db.scalars(
+                               select(PimBrand).where(
+                                   PimBrand.company_id == company_id,
+                                   PimBrand.name == brand_name,
+                               )
+                           ).first()
+                           if not brand:
+                               brand = PimBrand(company_id=company_id, name=brand_name, active=True)
+                               db.add(brand)
+                               db.flush()
+                           pim_prod.brand_id = brand.id
+                       # --- Upsert product name (I18n) ---
+                       if name:
+                           prod_i18n = db.scalars(
+                               select(PimProductI18n).where(
+                                   PimProductI18n.product_id == pim_prod.id,
+                                   PimProductI18n.language_code == "sv-SE",
+                               )
+                           ).first()
+                           if not prod_i18n:
+                               prod_i18n = PimProductI18n(product_id=pim_prod.id, language_code="sv-SE", name=name)
+                               db.add(prod_i18n)
+                               db.flush()
+                           else:
+                               prod_i18n.name = name
             raise ValueError(f"Connection {connection_id} not found")
 
         if not conn.consumer_key or not conn.consumer_secret:
@@ -53,6 +93,27 @@ def import_from_woo(self, connection_id: int, location_id: int, seed_stock: bool
             first_company = db.scalar(
                 select(CoreCompany).where(CoreCompany.active.is_(True)).limit(1)
             )
+                       # --- Upsert price ---
+                       if price is not None:
+                           price_list_id = 1  # TODO: select correct pricelist
+                           price_item = db.scalars(
+                               select(PimPriceListItem).where(
+                                   PimPriceListItem.price_list_id == price_list_id,
+                                   PimPriceListItem.variant_id == variant.id,
+                                   PimPriceListItem.min_qty == 1,
+                               )
+                           ).first()
+                           if not price_item:
+                               price_item = PimPriceListItem(
+                                   price_list_id=price_list_id,
+                                   variant_id=variant.id,
+                                   min_qty=1,
+                                   unit_price=price,
+                               )
+                               db.add(price_item)
+                               db.flush()
+                           else:
+                               price_item.unit_price = price
             if not first_company:
                 raise ValueError("No active company found in database.")
             company_id = first_company.id

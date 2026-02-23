@@ -15,6 +15,9 @@ class StockBalanceResponse(ORMModel):
     on_hand_qty: Decimal
     reserved_qty: Decimal
     available_qty: Decimal
+    name: str | None = None
+    brand: str | None = None
+    price: Decimal | None = None
 
 
 class StockMovementCreate(BaseModel):
