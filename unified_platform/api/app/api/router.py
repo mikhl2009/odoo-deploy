@@ -9,11 +9,13 @@ from app.api.routes import (
     inbound,
     integration,
     inventory,
+    nshift,
     products,
     purchase,
     rbac,
     sales,
     suppliers,
+    wgr,
     woo,
 )
 
@@ -30,3 +32,5 @@ api_router.include_router(sales.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(integration.router)
 api_router.include_router(woo.router)
+api_router.include_router(wgr.router)
+api_router.include_router(nshift.router)

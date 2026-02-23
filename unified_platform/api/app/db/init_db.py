@@ -32,6 +32,9 @@ DEFAULT_PERMISSIONS = [
     "rbac.write",
 ]
 
+DEFAULT_ADMIN_EMAIL = "admin@unifiederp.com"
+LEGACY_ADMIN_EMAILS = {"admin@unified.local"}
+
 
 def seed_defaults(db: Session) -> None:
     company = db.scalar(select(CoreCompany).where(CoreCompany.legal_name == "Unified Demo AB"))
@@ -85,9 +88,15 @@ def seed_defaults(db: Session) -> None:
         if not exists:
             db.add(CoreRolePermission(role_id=admin_role.id, permission_id=permission.id))
 
-    admin_user = db.scalar(select(CoreUser).where(CoreUser.email == "admin@unified.local"))
+    admin_user = db.scalar(select(CoreUser).where(CoreUser.email == DEFAULT_ADMIN_EMAIL))
     if not admin_user:
-        admin_user = CoreUser(email="admin@unified.local", password_hash=hash_password("admin123"), status="active")
+        # Backward compatibility: migrate legacy seeded admin email to a valid domain.
+        legacy_user = db.scalar(select(CoreUser).where(CoreUser.email.in_(LEGACY_ADMIN_EMAILS)))
+        if legacy_user:
+            legacy_user.email = DEFAULT_ADMIN_EMAIL
+            admin_user = legacy_user
+    if not admin_user:
+        admin_user = CoreUser(email=DEFAULT_ADMIN_EMAIL, password_hash=hash_password("admin123"), status="active")
         db.add(admin_user)
         db.flush()
 

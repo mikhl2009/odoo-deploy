@@ -81,3 +81,18 @@ async def ws_sync_status(websocket: WebSocket) -> None:
             await websocket.receive_text()
     except WebSocketDisconnect:
         ws_manager.disconnect(channel, websocket)
+
+
+@app.websocket("/api/v1/ws/warehouse")
+async def ws_warehouse(websocket: WebSocket) -> None:
+    """
+    Warehouse Portal listens here for real-time updates.
+    Broadcasts: order_ready, label_printed, stock_updated
+    """
+    channel = "warehouse"
+    await ws_manager.connect(channel, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(channel, websocket)

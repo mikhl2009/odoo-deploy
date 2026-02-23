@@ -19,6 +19,17 @@ services:
       JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-change-me-refresh-key}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       REFRESH_TOKEN_EXPIRE_MINUTES: ${REFRESH_TOKEN_EXPIRE_MINUTES:-10080}
+      WGR_API_URL: ${WGR_API_URL:-}
+      WGR_API_USER: ${WGR_API_USER:-}
+      WGR_API_PASS: ${WGR_API_PASS:-}
+      WGR_LOCATION_ID: ${WGR_LOCATION_ID:-1}
+      WGR_COMPANY_ID: ${WGR_COMPANY_ID:-1}
+      NSHIFT_API_URL: ${NSHIFT_API_URL:-https://api.unifaun.com/rs-extapi/v1}
+      NSHIFT_DEVELOPER_ID: ${NSHIFT_DEVELOPER_ID:-}
+      NSHIFT_API_KEY: ${NSHIFT_API_KEY:-}
+      NSHIFT_PRINTER_ID: ${NSHIFT_PRINTER_ID:-}
+      NSHIFT_SENDER_QUICK_ID: ${NSHIFT_SENDER_QUICK_ID:-SNUSHALLEN}
+      WOO_PUSH_BATCH_SIZE: ${WOO_PUSH_BATCH_SIZE:-50}
     depends_on:
       redis:
         condition: service_started
@@ -41,10 +52,52 @@ services:
       JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-change-me-refresh-key}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       REFRESH_TOKEN_EXPIRE_MINUTES: ${REFRESH_TOKEN_EXPIRE_MINUTES:-10080}
+      WGR_API_URL: ${WGR_API_URL:-}
+      WGR_API_USER: ${WGR_API_USER:-}
+      WGR_API_PASS: ${WGR_API_PASS:-}
+      WGR_LOCATION_ID: ${WGR_LOCATION_ID:-1}
+      WGR_COMPANY_ID: ${WGR_COMPANY_ID:-1}
+      NSHIFT_API_URL: ${NSHIFT_API_URL:-https://api.unifaun.com/rs-extapi/v1}
+      NSHIFT_DEVELOPER_ID: ${NSHIFT_DEVELOPER_ID:-}
+      NSHIFT_API_KEY: ${NSHIFT_API_KEY:-}
+      NSHIFT_PRINTER_ID: ${NSHIFT_PRINTER_ID:-}
+      NSHIFT_SENDER_QUICK_ID: ${NSHIFT_SENDER_QUICK_ID:-SNUSHALLEN}
+      WOO_PUSH_BATCH_SIZE: ${WOO_PUSH_BATCH_SIZE:-50}
     depends_on:
       - api
       - redis
-    command: ["celery", "-A", "app.worker.celery_app", "worker", "--loglevel=INFO"]
+    command: ["celery", "-A", "app.worker.celery_app", "worker", "--loglevel=INFO", "-Q", "wgr,woo,nshift,celery"]
+
+  beat:
+    build:
+      context: ./api
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-unified}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-unified}
+      POSTGRES_DB: ${POSTGRES_DB:-unified_erp}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      DATABASE_URL: ${DATABASE_URL:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-change-me-refresh-key}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_MINUTES: ${REFRESH_TOKEN_EXPIRE_MINUTES:-10080}
+      WGR_API_URL: ${WGR_API_URL:-}
+      WGR_API_USER: ${WGR_API_USER:-}
+      WGR_API_PASS: ${WGR_API_PASS:-}
+      WGR_LOCATION_ID: ${WGR_LOCATION_ID:-1}
+      WGR_COMPANY_ID: ${WGR_COMPANY_ID:-1}
+      NSHIFT_API_URL: ${NSHIFT_API_URL:-https://api.unifaun.com/rs-extapi/v1}
+      NSHIFT_DEVELOPER_ID: ${NSHIFT_DEVELOPER_ID:-}
+      NSHIFT_API_KEY: ${NSHIFT_API_KEY:-}
+      NSHIFT_PRINTER_ID: ${NSHIFT_PRINTER_ID:-}
+      NSHIFT_SENDER_QUICK_ID: ${NSHIFT_SENDER_QUICK_ID:-SNUSHALLEN}
+      WOO_PUSH_BATCH_SIZE: ${WOO_PUSH_BATCH_SIZE:-50}
+    depends_on:
+      - api
+      - redis
+    command: ["celery", "-A", "app.worker.celery_app", "beat", "--loglevel=INFO"]
 
   web:
     build:

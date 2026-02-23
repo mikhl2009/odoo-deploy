@@ -22,6 +22,18 @@ class Settings(BaseSettings):
 
     redis_url: str = Field(default="redis://redis:6379/0", alias="REDIS_URL")
 
+    wgr_api_url: str = Field(default="", alias="WGR_API_URL")
+    wgr_api_user: str = Field(default="", alias="WGR_API_USER")
+    wgr_api_pass: str = Field(default="", alias="WGR_API_PASS")
+    wgr_location_id: int = Field(default=1, alias="WGR_LOCATION_ID")
+    wgr_company_id: int = Field(default=1, alias="WGR_COMPANY_ID")
+    woo_push_batch_size: int = Field(default=50, alias="WOO_PUSH_BATCH_SIZE")
+    nshift_api_url: str = Field(default="https://api.unifaun.com/rs-extapi/v1", alias="NSHIFT_API_URL")
+    nshift_developer_id: str = Field(default="", alias="NSHIFT_DEVELOPER_ID")
+    nshift_api_key: str = Field(default="", alias="NSHIFT_API_KEY")
+    nshift_printer_id: str = Field(default="", alias="NSHIFT_PRINTER_ID")
+    nshift_sender_quick_id: str = Field(default="SNUSHALLEN", alias="NSHIFT_SENDER_QUICK_ID")
+
     jwt_secret_key: str = Field(default="change-me-in-production", alias="JWT_SECRET_KEY")
     jwt_refresh_secret_key: str = Field(default="change-me-refresh-key", alias="JWT_REFRESH_SECRET_KEY")
     access_token_expire_minutes: int = Field(default=30, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
