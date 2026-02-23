@@ -6,6 +6,9 @@ type StockRow = {
   id: number;
   location_id: number;
   variant_id: number;
+  name?: string | null;
+  brand?: string | null;
+  price?: string | number | null;
   on_hand_qty: string;
   reserved_qty: string;
   available_qty: string;
@@ -26,7 +29,7 @@ async function loadStock(): Promise<StockRow[]> {
 export default async function InventoryStockPage() {
   const rows = await loadStock();
 
-  function formatCurrency(val: any) {
+  function formatCurrency(val: string | number | null | undefined) {
     if (val == null) return "";
     return Number(val).toLocaleString("sv-SE", { style: "currency", currency: "SEK" });
   }

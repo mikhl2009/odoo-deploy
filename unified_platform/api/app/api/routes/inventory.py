@@ -18,6 +18,7 @@ from app.models.inventory import (
     InvStockMovement,
     InvValuationLayer,
 )
+from app.models.pim import PimBrand, PimPriceListItem, PimProduct, PimProductI18n, PimProductVariant
 from app.schemas.inventory import (
     CountLineCreate,
     CountSessionCreate,
@@ -105,7 +106,7 @@ def stock(
                 select(PimPriceListItem).where(
                     PimPriceListItem.variant_id == variant.id,
                     PimPriceListItem.min_qty == 1,
-                )
+                ).order_by(PimPriceListItem.id.desc())
             ).first()
             price = price_item.unit_price if price_item else None
         result.append({

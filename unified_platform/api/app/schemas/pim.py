@@ -64,9 +64,14 @@ class ProductResponse(ORMModel):
     company_id: int
     sku: str
     ean: str | None = None
+    brand_id: int | None = None
     status: str
     product_type: str
     is_tobacco: bool
+    name: str | None = None
+    brand: str | None = None
+    default_price: Decimal | None = None
+    variant_count: int = 0
 
 
 class ProductVariantResponse(ORMModel):

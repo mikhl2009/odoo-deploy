@@ -3,8 +3,12 @@ import { getDemoToken } from "@/lib/demo-auth";
 
 type Product = {
   id: number;
+  name: string | null;
+  brand: string | null;
   sku: string;
   ean: string | null;
+  default_price: string | number | null;
+  variant_count: number;
   status: string;
   product_type: string;
   is_tobacco: boolean;
@@ -15,6 +19,11 @@ type Revision = {
   revision_no: number;
   changed_at: string;
 };
+
+function formatCurrency(value: string | number | null | undefined): string {
+  if (value == null) return "-";
+  return Number(value).toLocaleString("sv-SE", { style: "currency", currency: "SEK" });
+}
 
 async function loadProduct(id: string): Promise<Product | null> {
   const token = await getDemoToken();
@@ -56,12 +65,16 @@ export default async function ProductDetailPage({
 
   return (
     <section>
-      <h1 className="page-title">Product {product.sku}</h1>
+      <h1 className="page-title">{product.name || product.sku}</h1>
       <p className="page-subtitle">
-        Tabs baseline: General, Variants, Pricing, Compliance, Media, History.
+        SKU {product.sku} with synced brand, price and revision history.
       </p>
 
       <div className="card">
+        <p><strong>Name:</strong> {product.name || product.sku}</p>
+        <p><strong>Brand:</strong> {product.brand || "-"}</p>
+        <p><strong>Price:</strong> {formatCurrency(product.default_price)}</p>
+        <p><strong>Variants:</strong> {product.variant_count}</p>
         <p><strong>Status:</strong> {product.status}</p>
         <p><strong>EAN:</strong> {product.ean || "-"}</p>
         <p><strong>Type:</strong> {product.product_type}</p>

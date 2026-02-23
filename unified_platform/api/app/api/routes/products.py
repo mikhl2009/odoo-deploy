@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_current_user, require_permission
+from app.api.deps import get_db, require_permission
 from app.models.core import CoreUser
 from app.models.pim import (
+    PimBrand,
     PimMediaAsset,
     PimPriceListItem,
     PimProduct,
@@ -32,6 +34,84 @@ from app.services.audit import enqueue_outbox_event, log_audit_event
 router = APIRouter(tags=["pim"])
 
 
+def _serialize_products(db: Session, products: list[PimProduct]) -> list[dict]:
+    if not products:
+        return []
+
+    product_ids = [product.id for product in products]
+    product_id_set = set(product_ids)
+
+    names: dict[int, str] = {}
+    for translation in db.scalars(
+        select(PimProductI18n)
+        .where(PimProductI18n.product_id.in_(product_ids))
+        .order_by(PimProductI18n.id.asc())
+    ):
+        if translation.product_id in product_id_set and translation.name and translation.product_id not in names:
+            names[translation.product_id] = translation.name
+
+    for translation in db.scalars(
+        select(PimProductI18n).where(
+            PimProductI18n.product_id.in_(product_ids),
+            PimProductI18n.language_code == "sv-SE",
+        )
+    ):
+        if translation.product_id in product_id_set and translation.name:
+            names[translation.product_id] = translation.name
+
+    brand_names: dict[int, str] = {}
+    brand_ids = [product.brand_id for product in products if product.brand_id]
+    if brand_ids:
+        for brand in db.scalars(select(PimBrand).where(PimBrand.id.in_(brand_ids))):
+            brand_names[brand.id] = brand.name
+
+    variant_counts: dict[int, int] = defaultdict(int)
+    variant_to_product: dict[int, int] = {}
+    variant_ids: list[int] = []
+    for variant_id, product_id in db.execute(
+        select(PimProductVariant.id, PimProductVariant.product_id).where(
+            PimProductVariant.product_id.in_(product_ids)
+        )
+    ):
+        variant_to_product[variant_id] = product_id
+        variant_counts[product_id] += 1
+        variant_ids.append(variant_id)
+
+    default_prices: dict[int, object] = {}
+    if variant_ids:
+        for variant_id, unit_price in db.execute(
+            select(PimPriceListItem.variant_id, PimPriceListItem.unit_price)
+            .where(
+                PimPriceListItem.variant_id.in_(variant_ids),
+                PimPriceListItem.min_qty == 1,
+            )
+            .order_by(PimPriceListItem.id.desc())
+        ):
+            product_id = variant_to_product.get(variant_id)
+            if product_id and product_id not in default_prices:
+                default_prices[product_id] = unit_price
+
+    payloads: list[dict] = []
+    for product in products:
+        payloads.append(
+            {
+                "id": product.id,
+                "company_id": product.company_id,
+                "sku": product.sku,
+                "ean": product.ean,
+                "brand_id": product.brand_id,
+                "status": product.status,
+                "product_type": product.product_type,
+                "is_tobacco": product.is_tobacco,
+                "name": names.get(product.id),
+                "brand": brand_names.get(product.brand_id) if product.brand_id else None,
+                "default_price": default_prices.get(product.id),
+                "variant_count": variant_counts.get(product.id, 0),
+            }
+        )
+    return payloads
+
+
 @router.get("/products", response_model=list[ProductResponse])
 def list_products(
     sku: str | None = None,
@@ -39,7 +119,7 @@ def list_products(
     status: str | None = None,
     db: Session = Depends(get_db),
     _: CoreUser = Depends(require_permission("pim.read")),
-) -> list[PimProduct]:
+) -> list[dict]:
     stmt = select(PimProduct)
     if sku:
         stmt = stmt.where(PimProduct.sku.ilike(f"%{sku}%"))
@@ -47,7 +127,8 @@ def list_products(
         stmt = stmt.where(PimProduct.ean == ean)
     if status:
         stmt = stmt.where(PimProduct.status == status)
-    return db.scalars(stmt.order_by(PimProduct.id.desc()).limit(500)).all()
+    products = db.scalars(stmt.order_by(PimProduct.id.desc()).limit(500)).all()
+    return _serialize_products(db, products)
 
 
 @router.post("/products", response_model=ProductResponse)
@@ -55,7 +136,7 @@ def create_product(
     payload: ProductCreate,
     db: Session = Depends(get_db),
     user: CoreUser = Depends(require_permission("pim.write")),
-) -> PimProduct:
+) -> dict:
     existing = db.scalar(
         select(PimProduct).where(PimProduct.company_id == payload.company_id, PimProduct.sku == payload.sku)
     )
@@ -95,7 +176,7 @@ def create_product(
     )
     db.commit()
     db.refresh(product)
-    return product
+    return _serialize_products(db, [product])[0]
 
 
 @router.get("/products/{product_id}", response_model=ProductResponse)
@@ -103,11 +184,11 @@ def get_product(
     product_id: int,
     db: Session = Depends(get_db),
     _: CoreUser = Depends(require_permission("pim.read")),
-) -> PimProduct:
+) -> dict:
     product = db.get(PimProduct, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return product
+    return _serialize_products(db, [product])[0]
 
 
 @router.patch("/products/{product_id}", response_model=ProductResponse)
@@ -116,7 +197,7 @@ def patch_product(
     payload: ProductUpdate,
     db: Session = Depends(get_db),
     user: CoreUser = Depends(require_permission("pim.write")),
-) -> PimProduct:
+) -> dict:
     product = db.get(PimProduct, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -178,7 +259,7 @@ def patch_product(
     )
     db.commit()
     db.refresh(product)
-    return product
+    return _serialize_products(db, [product])[0]
 
 
 @router.post("/products/{product_id}/variants", response_model=ProductVariantResponse)
