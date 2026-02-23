@@ -86,6 +86,7 @@ def _run_import(task_id: str, connection_id: int, location_id: int, seed_stock: 
         imported = updated = skipped = 0
         auth = (conn.consumer_key, conn.consumer_secret)
         base = conn.api_base_url.rstrip("/")
+        seeded_variants: set[int] = set()  # track within this import run to avoid duplicates
 
         with httpx.Client(auth=auth, timeout=30, follow_redirects=True) as client:
             page = 1
@@ -193,7 +194,8 @@ def _run_import(task_id: str, connection_id: int, location_id: int, seed_stock: 
                             )
 
                         # -- InvStockBalance
-                        if seed_stock:
+                        if seed_stock and variant.id not in seeded_variants:
+                            seeded_variants.add(variant.id)
                             balance = db.scalars(
                                 select(InvStockBalance).where(
                                     InvStockBalance.company_id == company_id,
