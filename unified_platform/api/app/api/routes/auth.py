@@ -5,7 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -85,10 +85,6 @@ def token(
 # First-run setup  (only works when no users exist yet)
 # ---------------------------------------------------------------------------
 
-class _SetupRequest(LoginRequest):
-    admin_password: str
-
-
 @router.post("/setup", summary="First-run: create admin user (only when DB is empty)")
 def setup(db: Session = Depends(get_db)) -> dict:
     """
@@ -100,11 +96,15 @@ def setup(db: Session = Depends(get_db)) -> dict:
 
     Returns 409 if any user already exists.
     """
-    existing = db.scalar(select(func.count()).select_from(CoreUser))
-    if existing and existing > 0:
+    existing_users = db.scalars(select(CoreUser).order_by(CoreUser.id)).all()
+    if existing_users:
         raise HTTPException(
             status_code=409,
-            detail=f"{existing} user(s) already exist. Use /auth/login instead.",
+            detail={
+                "message": f"{len(existing_users)} user(s) already exist. Use /auth/login.",
+                "emails": [u.email for u in existing_users],
+                "hint": "POST /api/v1/auth/admin-reset to force-reset the admin password.",
+            },
         )
 
     # ── Company ──────────────────────────────────────────────────────────
@@ -188,3 +188,41 @@ def logout() -> dict[str, str]:
 @router.get("/me", response_model=UserMeResponse)
 def me(current_user: CoreUser = Depends(get_current_user)) -> UserMeResponse:
     return UserMeResponse.model_validate(current_user)
+
+
+# ---------------------------------------------------------------------------
+# Emergency admin password reset (proof-of-server: requires JWT_SECRET_KEY)
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/admin-reset",
+    summary="Emergency: reset admin password using server secret",
+)
+def admin_reset(
+    server_secret: str,
+    new_password: str = "Admin1234!",
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Resets the first admin user's password without needing to log in.
+    Requires `server_secret` = the JWT_SECRET_KEY env var value.
+    Only useful for initial setup / locked-out scenarios.
+    """
+    from app.core.config import settings as cfg  # avoid circular at module level
+
+    if server_secret != cfg.jwt_secret_key:
+        raise HTTPException(status_code=403, detail="Invalid server secret")
+
+    user = db.scalar(select(CoreUser).order_by(CoreUser.id).limit(1))
+    if not user:
+        raise HTTPException(status_code=404, detail="No users in database – call /auth/setup first")
+
+    user.password_hash = hash_password(new_password)
+    user.status = "active"
+    db.commit()
+
+    return {
+        "message": "Password reset successfully.",
+        "email": user.email,
+        "new_password": new_password,
+    }
