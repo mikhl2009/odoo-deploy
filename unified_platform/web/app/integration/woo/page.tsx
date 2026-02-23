@@ -12,10 +12,10 @@ type SyncStatus = {
 
 type Connection = {
   id: number;
-  store_channel_id: number;
-  provider: string;
-  api_base_url: string;
-  active: boolean;
+  name: string;
+  company_id: number;
+  channel_type: string;
+  base_url: string;
 };
 
 async function loadSyncStatus(): Promise<SyncStatus> {
@@ -34,7 +34,7 @@ async function loadConnections(): Promise<Connection[]> {
   const token = await getDemoToken();
   if (!token) return [];
   try {
-    return await apiGet<Connection[]>("/api/v1/integration/woo/connections", token);
+    return await apiGet<Connection[]>("/api/v1/integration/woo/channels", token);
   } catch {
     return [];
   }
@@ -89,10 +89,10 @@ export default async function WooIntegrationPage() {
               connections.map((connection) => (
                 <tr key={connection.id}>
                   <td>{connection.id}</td>
-                  <td>{connection.store_channel_id}</td>
-                  <td>{connection.provider}</td>
-                  <td>{connection.api_base_url}</td>
-                  <td>{connection.active ? "Yes" : "No"}</td>
+                  <td>{connection.name}</td>
+                  <td>{connection.channel_type}</td>
+                  <td>{connection.base_url}</td>
+                  <td>Yes</td>
                 </tr>
               ))
             )}
