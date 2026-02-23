@@ -11,7 +11,8 @@ from app.core.security import decode_access_token
 from app.db.session import SessionLocal
 from app.models.core import CorePermission, CoreRolePermission, CoreUser, CoreUserRole
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# Swagger UI "Authorize" button uses /token (OAuth2 form flow)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
 def get_db() -> Generator[Session, None, None]:

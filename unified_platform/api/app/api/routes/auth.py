@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -11,29 +13,159 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
+    hash_password,
     verify_password,
 )
-from app.models.core import CoreUser
+from app.models.core import (
+    CoreCompany,
+    CoreLocation,
+    CorePermission,
+    CoreRole,
+    CoreRolePermission,
+    CoreUser,
+    CoreUserRole,
+)
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenResponse, UserMeResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# ---------------------------------------------------------------------------
+# Shared helper
+# ---------------------------------------------------------------------------
 
-@router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    user = db.scalar(select(CoreUser).where(CoreUser.email == payload.email))
-    if not user or not verify_password(payload.password, user.password_hash):
+_ALL_PERMISSIONS = [
+    "sync.read", "sync.write",
+    "pim.read", "pim.write",
+    "inventory.read", "inventory.write",
+    "sales.read", "sales.write",
+    "purchase.read", "purchase.write",
+    "reports.read",
+    "admin",
+]
+
+
+def _authenticate(email: str, password: str, db: Session) -> TokenResponse:
+    user = db.scalar(select(CoreUser).where(CoreUser.email == email))
+    if not user or not verify_password(password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if user.status != "active":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User disabled")
-
     user.last_login_at = datetime.now(UTC)
+    db.commit()
+    return TokenResponse(
+        access_token=create_access_token(str(user.id)),
+        refresh_token=create_refresh_token(str(user.id)),
+    )
+
+
+# ---------------------------------------------------------------------------
+# JSON login  (used by the actual frontend / scripts)
+# ---------------------------------------------------------------------------
+
+@router.post("/login", response_model=TokenResponse)
+def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+    return _authenticate(payload.email, payload.password, db)
+
+
+# ---------------------------------------------------------------------------
+# OAuth2 form login  (used by Swagger UI "Authorize" button)
+# username = e-mail address
+# ---------------------------------------------------------------------------
+
+@router.post("/token", response_model=TokenResponse, include_in_schema=False)
+def token(
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_db),
+) -> TokenResponse:
+    """OAuth2 password flow endpoint — Swagger UI Authorize dialog uses this."""
+    return _authenticate(form.username, form.password, db)
+
+
+# ---------------------------------------------------------------------------
+# First-run setup  (only works when no users exist yet)
+# ---------------------------------------------------------------------------
+
+class _SetupRequest(LoginRequest):
+    admin_password: str
+
+
+@router.post("/setup", summary="First-run: create admin user (only when DB is empty)")
+def setup(db: Session = Depends(get_db)) -> dict:
+    """
+    Creates:
+      - CoreCompany  id=1  'Snushallen i Norden AB'
+      - CoreLocation id=1  'Huvudlager'  (type=warehouse)
+      - CoreRole     key=admin  with all permissions
+      - CoreUser     admin@snushallen.cloud  password=Admin1234!
+
+    Returns 409 if any user already exists.
+    """
+    existing = db.scalar(select(func.count()).select_from(CoreUser))
+    if existing and existing > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{existing} user(s) already exist. Use /auth/login instead.",
+        )
+
+    # ── Company ──────────────────────────────────────────────────────────
+    company = db.scalar(select(CoreCompany).limit(1))
+    if not company:
+        company = CoreCompany(
+            legal_name="Snushallen i Norden AB",
+            org_no="559012-3456",
+            currency_code="SEK",
+            timezone="Europe/Stockholm",
+            country_code="SE",
+        )
+        db.add(company)
+        db.flush()
+
+    # ── Location ─────────────────────────────────────────────────────────
+    location = db.scalar(select(CoreLocation).limit(1))
+    if not location:
+        location = CoreLocation(
+            company_id=company.id,
+            code="HL",
+            name="Huvudlager",
+            location_type="warehouse",
+        )
+        db.add(location)
+        db.flush()
+
+    # ── Role + permissions ────────────────────────────────────────────────
+    role = db.scalar(select(CoreRole).where(CoreRole.key == "admin"))
+    if not role:
+        role = CoreRole(key="admin", name="Administrator")
+        db.add(role)
+        db.flush()
+
+        for perm_key in _ALL_PERMISSIONS:
+            perm = db.scalar(select(CorePermission).where(CorePermission.key == perm_key))
+            if not perm:
+                perm = CorePermission(key=perm_key, name=perm_key.replace(".", " ").title())
+                db.add(perm)
+                db.flush()
+            db.add(CoreRolePermission(role_id=role.id, permission_id=perm.id))
+
+    # ── Admin user ────────────────────────────────────────────────────────
+    default_password = "Admin1234!"
+    user = CoreUser(
+        email="admin@snushallen.cloud",
+        password_hash=hash_password(default_password),
+        status="active",
+    )
     db.add(user)
+    db.flush()
+    db.add(CoreUserRole(user_id=user.id, role_id=role.id))
     db.commit()
 
-    access = create_access_token(str(user.id))
-    refresh = create_refresh_token(str(user.id))
-    return TokenResponse(access_token=access, refresh_token=refresh)
+    return {
+        "message": "Setup complete. Change the password immediately.",
+        "email": user.email,
+        "password": default_password,
+        "company_id": company.id,
+        "location_id": location.id,
+    }
 
 
 @router.post("/refresh", response_model=TokenResponse)
