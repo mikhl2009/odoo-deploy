@@ -194,6 +194,52 @@ def me(current_user: CoreUser = Depends(get_current_user)) -> UserMeResponse:
 # Emergency admin password reset (proof-of-server: requires JWT_SECRET_KEY)
 # ---------------------------------------------------------------------------
 
+_VIEW_PERMISSIONS = ["sync.read", "pim.read", "inventory.read", "sales.read", "purchase.read", "reports.read"]
+
+
+@router.post("/seed-viewer", summary="Create read-only viewer@unified.local account (server secret required)")
+def seed_viewer(
+    server_secret: str,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Creates (or resets) viewer@unified.local / viewer123 — used by the Next.js frontend."""
+    from app.core.config import settings as cfg  # noqa: PLC0415
+
+    if server_secret != cfg.jwt_secret_key:
+        raise HTTPException(status_code=403, detail="Invalid server secret")
+
+    role = db.scalar(select(CoreRole).where(CoreRole.key == "viewer"))
+    if not role:
+        role = CoreRole(key="viewer", name="Viewer")
+        db.add(role)
+        db.flush()
+        for perm_key in _VIEW_PERMISSIONS:
+            perm = db.scalar(select(CorePermission).where(CorePermission.key == perm_key))
+            if not perm:
+                perm = CorePermission(key=perm_key, name=perm_key.replace(".", " ").title())
+                db.add(perm)
+                db.flush()
+            db.add(CoreRolePermission(role_id=role.id, permission_id=perm.id))
+        db.flush()
+
+    viewer = db.scalar(select(CoreUser).where(CoreUser.email == "viewer@unified.local"))
+    if viewer:
+        viewer.password_hash = hash_password("viewer123")
+        viewer.status = "active"
+    else:
+        viewer = CoreUser(
+            email="viewer@unified.local",
+            password_hash=hash_password("viewer123"),
+            status="active",
+        )
+        db.add(viewer)
+        db.flush()
+        db.add(CoreUserRole(user_id=viewer.id, role_id=role.id))
+
+    db.commit()
+    return {"message": "Viewer user ready.", "email": "viewer@unified.local", "password": "viewer123"}
+
+
 @router.post(
     "/admin-reset",
     summary="Emergency: reset admin password using server secret",
