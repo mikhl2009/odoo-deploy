@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_permission
 from app.db.session import SessionLocal
-from app.models.core import CoreCompany, CoreUser
+from app.models.core import CoreCompany, CoreLocation, CoreUser
 from app.models.integration import IntExternalIdMap, IntStoreChannel, IntStoreConnection
 from app.models.inventory import InvStockBalance
 from app.models.pim import PimProduct, PimProductVariant
@@ -65,6 +65,23 @@ def _run_import(task_id: str, connection_id: int, location_id: int, seed_stock: 
                 "Channel %s has invalid company_id=%s, falling back to company_id=%s",
                 conn.store_channel_id, raw_company_id, company_id,
             )
+
+        # ── Ensure location exists (self-healing) ──────────────────────
+        if seed_stock:
+            loc = db.get(CoreLocation, location_id)
+            if not loc:
+                logger.warning("CoreLocation id=%s missing – creating 'Huvudlager'", location_id)
+                loc = CoreLocation(
+                    company_id=company_id,
+                    code="WH-MAIN",
+                    name="Huvudlager",
+                    location_type="warehouse",
+                    active=True,
+                )
+                db.add(loc)
+                db.flush()  # get the id
+                location_id = loc.id
+                logger.info("Created CoreLocation id=%s", location_id)
 
         imported = updated = skipped = 0
         auth = (conn.consumer_key, conn.consumer_secret)
