@@ -304,3 +304,26 @@ def import_status(
     if state is None:
         return {"task_id": task_id, "status": "unknown"}
     return {"task_id": task_id, **state}
+
+
+@router.post("/dedup-stock", summary="Admin: remove duplicate InvStockBalance rows, keep lowest id per key")
+def dedup_stock(
+    db: Session = Depends(get_db),
+    _: CoreUser = Depends(require_permission("sync.write")),
+) -> dict:
+    """
+    Deletes duplicate inv_stock_balance rows, keeping the one with the lowest id
+    per (company_id, location_id, variant_id, lot_id, container_id) group.
+    Safe to run multiple times.
+    """
+    from sqlalchemy import text
+    result = db.execute(text("""
+        DELETE FROM inv_stock_balance
+        WHERE id NOT IN (
+            SELECT MIN(id)
+            FROM inv_stock_balance
+            GROUP BY company_id, location_id, variant_id, lot_id, container_id
+        )
+    """))
+    db.commit()
+    return {"deleted": result.rowcount, "message": "Duplicate stock balance rows removed"}
