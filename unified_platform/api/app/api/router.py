@@ -6,10 +6,12 @@ from app.api.routes import (
     audit,
     auth,
     dashboard,
+    dev,
     inbound,
     integration,
     inventory,
     nshift,
+    pim_import,
     products,
     purchase,
     rbac,
@@ -34,3 +36,5 @@ api_router.include_router(integration.router)
 api_router.include_router(woo.router)
 api_router.include_router(wgr.router)
 api_router.include_router(nshift.router)
+api_router.include_router(pim_import.router)
+api_router.include_router(dev.router)
