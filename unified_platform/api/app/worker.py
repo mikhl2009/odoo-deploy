@@ -47,6 +47,7 @@ celery_app.conf.beat_schedule = {
 # ---------------------------------------------------------------------------
 
 celery_app.conf.task_routes = {
+    "app.tasks.pim.*": {"queue": "pim"},
     "app.tasks.wgr.*": {"queue": "wgr"},
     "app.tasks.woo.*": {"queue": "woo"},
     "app.tasks.nshift.*": {"queue": "nshift"},

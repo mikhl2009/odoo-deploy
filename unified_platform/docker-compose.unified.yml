@@ -74,7 +74,7 @@ services:
         condition: service_healthy
       api:
         condition: service_started
-    command: ["celery", "-A", "app.worker.celery_app", "worker", "--loglevel=INFO", "-Q", "wgr,woo,nshift,celery"]
+    command: ["celery", "-A", "app.worker.celery_app", "worker", "--loglevel=INFO", "-Q", "pim,wgr,woo,nshift,celery"]
 
   beat:
     build:

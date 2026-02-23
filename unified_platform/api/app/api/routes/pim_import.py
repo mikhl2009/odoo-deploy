@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, require_permission
 from app.models.core import CoreUser
 from app.models.integration import IntStoreConnection
+from app.tasks.pim import import_from_woo as _pim_import_task
 from app.worker import celery_app
 
 logger = logging.getLogger(__name__)
@@ -60,8 +61,7 @@ def import_from_woo(
                    "PATCH /integration/woo/connections/{id} to add credentials.",
         )
 
-    from app.tasks.pim import import_from_woo as _task  # noqa: PLC0415
-    job = _task.delay(connection_id, location_id, seed_stock)
+    job = _pim_import_task.delay(connection_id, location_id, seed_stock)
     logger.info("Queued WooImport task %s for connection %d", job.id, connection_id)
     return {"task_id": job.id, "status": "queued", "connection_id": connection_id}
 
